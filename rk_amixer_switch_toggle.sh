@@ -26,7 +26,7 @@ usage()
 	exit 0
 }
 
-##print log and execute cmd
+#print log and execute cmd
 do_cmd() 
 {
 	CMD=$*
@@ -48,25 +48,21 @@ do case $arg in
         l)      TEST_LOOP="$OPTARG";;
         D)      DEVICE="$OPTARG";;
         h)      usage;;
-        :)      die "$0: Must supply an argument to -$OPTARG.";; 
+        :)      die "$0: Must supply an argument to -$OPTARG.";;
         \?)     die "Invalid Option -$OPTARG ";;
 esac
 done
 
 #Use aplay to get information by default
 PLAYBACK_SOUND_INFO="$(aplay -l | grep -i card)"
-
 PLAYBACK_SOUND_CARDS=( $(aplay -l | grep -i card | cut -d , -f 1 | grep -o '[0-9]\+:' | cut -c 1) )
 PLAYBACK_SOUND_DEVICE=($(aplay -l | grep -i card | cut -d , -f 2 | grep -o '[0-9]\+:' | cut -c 1) )
 
-
-
-# Define default values if possible
+# Define default values 
 : ${TEST_LOOP:=1}
 
 #If the -D parameter is not used. Default test the first sound card obtained by aplay
 : ${DEVICE:="hw:${PLAYBACK_SOUND_CARDS},${PLAYBACK_SOUND_DEVICE}"}
-
 CARD=$(echo "${DEVICE}" | cut -c 4)
 
 ########################### DO WORK ###############################
@@ -75,7 +71,7 @@ CARD=$(echo "${DEVICE}" | cut -c 4)
 echo "==========================Switch Infomation=========================="
 amixer -c ${CARD} contents | grep Switch 
 
-echo "==========================Sound Infomation=========================="
+echo "==========================Sound Infomation==========================="
 echo -e "Sound_Info:\n$PLAYBACK_SOUND_INFO" #actually is Playback_Sound_Info
 echo "The number of test_loop is $TEST_LOOP"
 echo "Test device is $DEVICE"
@@ -85,16 +81,16 @@ NUMBER_OF_SWITHCES=( $(amixer -c ${CARD} contents | grep Switch | cut -d = -f 4 
 echo "Number of Switches is $NUMBER_OF_SWITHCES"
 
 echo "==========================Start Test=========================="
-
 #Start testing at the back without changing the switch
-arecord -D ${DEVICE} -f dat -d 300 | aplay -D ${DEVICE} -f dat -d 300&
+TEST_TIME=$((NUMBER_OF_SWITHCES*5)) #5 Test each state of each switch for 5 seconds
+arecord -D ${DEVICE} -f dat -d $TEST_TIME | aplay -D ${DEVICE} -f dat -d $TEST_TIME &
 sleep 3 # There is a delay in calling the audio device
 
 i=0
 while [[ $i -lt $TEST_LOOP ]]
 do
 	j=0
-        while [[ $j -lt 3 ]]
+        while [[ $j -lt $NUMBER_OF_SWITHCES ]]
         do
                 SWITCH_NAME="$(amixer -c ${CARD} contents | grep Switch | cut -d = -f 4 | awk 'FNR=='$j+1'')" #awk star from 1 not 0
                 echo "================$SWITCH_NAME Test================"
@@ -103,6 +99,7 @@ do
                 SWITCH_VALUES=$(eval amixer cget name=$SWITCH_NAME | grep values=1 | cut -d , -f 3 | cut -d = -f 2)
                 echo -e "|LOG|The initial value of $SWITCH_NAME is $SWITCH_VALUES.\n"
 
+                #Test according to different initial values
                 if [ $SWITCH_VALUES == 1 ];then
                         do_cmd amixer -c ${CARD} cset name=$SWITCH_NAME 0
                         sleep 5
