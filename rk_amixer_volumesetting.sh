@@ -1,7 +1,8 @@
-#! /bin/sh
+#! /bin/bash
 # 
 # Copyright (C) 2011 Texas Instruments Incorporated - http://www.ti.com/
-#  
+# Copyright (C) 2019 Fuzhou Rockchip Electronics Co.,Ltd
+# 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as 
 # published by the Free Software Foundation version 2.
@@ -13,9 +14,6 @@
 # 
 # @desc Varies the volume by playing the audio in backgroung using amixer interface.
 # @params  none.
-# @history 2011-04-07: First version
-# @history 2011-05-13: Removed st_log.sh
-source "common.sh"  # Import do_cmd(), die() and other functions
 
 ############################# Functions #######################################
 usage()
@@ -27,6 +25,21 @@ usage()
 	exit 0
 }
 
+#print log and execute cmd
+do_cmd() 
+{
+	CMD=$*
+	echo -e "\n|LOG|CMD=$CMD"
+	eval $CMD
+	RESULT=$?
+	if [ $RESULT -ne 0 ];then
+		echo "|FAIL|:$CMD failed. Return code is $RESULT"
+		exit $RESULT
+	fi
+	if [ $RESULT -eq 0 ];then
+		echo "|PASS|:$CMD passed."
+	fi
+}
 ################################ CLI Params ####################################
 # Please use getopts
 while getopts  :h:D arg
@@ -38,120 +51,66 @@ do case $arg in
 esac
 done
 
-: ${DEVICE:=$(get_audio_devnodes.sh -d aic -t play | grep 'hw:[0-9]' || echo 'hw:0,0')}
+#Use aplay to get information by default
+PLAYBACK_SOUND_INFO="$(aplay -l | grep -i card)"
+PLAYBACK_SOUND_CARDS=( $(aplay -l | grep -i card | cut -d , -f 1 | grep -o '[0-9]\+:' | cut -c 1) )
+PLAYBACK_SOUND_DEVICE=($(aplay -l | grep -i card | cut -d , -f 2 | grep -o '[0-9]\+:' | cut -c 1) )
+
+#If the -D parameter is not used. Default test the first sound card obtained by aplay
+: ${DEVICE:="hw:${PLAYBACK_SOUND_CARDS},${PLAYBACK_SOUND_DEVICE}"}
 CARD=$(echo "${DEVICE}" | cut -c 4)
 
-############################ USER-DEFINED Params ###############################
-# Try to avoid defining values here, instead see if possible
-# to determine the value dynamically. ARCH, DRIVER, SOC and MACHINE are 
-# initilized and exported by runltp script based on platform option (-P)
-case $ARCH in
-esac
-case $DRIVER in
-esac
-case $SOC in
-esac
-case $MACHINE in
-*dra7xx-evm|am57xx-evm|k2g-evm)
-		CAPTURE_NAME="PGA Capture Volume";
-		PLAYBACK_NAME="PCM Playback Volume"
-		MINVAL=0
-		MAXVAL=127
-		STEP=30
-		;;
-am180x-evm|dm355-evm|dm365-evm|dm6446-evm|dm6467-evm|dm368-evm)
-		CAPTURE_NAME="PGA Capture Volume";
-		PLAYBACK_NAME="PCM Playback Volume"
-		MINVAL=0
-		MAXVAL=127
-		STEP=30
-		;;
-omap3evm)
-		CAPTURE_NAME="Analog Capture Volume";
-		PLAYBACK_NAME="Headset Playback Volume"
-		MINVAL=0
-		MAXVAL=5
-		STEP=1
-		amixer cset numid=25 1,1
-		amixer cset numid=28 1,1		
-		;;		
-am37x-evm|beagleboard)		
-		CAPTURE_NAME="Analog Capture Volume";
-		PLAYBACK_NAME="Headset Playback Volume"
-		MINVAL=0
-		MAXVAL=5
-		STEP=1
-		;;
-am3517-evm)		
-		CAPTURE_NAME="Line Input Volume";
-		PLAYBACK_NAME="Line Output Volume"
-		MINVAL=0
-		MAXVAL=31
-		STEP=5
-		;;
-da850-omapl138-evm)
-                CAPTURE_NAME="PGA Capture Volume";
-                PLAYBACK_NAME="PCM Playback Volume"
-                MINVAL=0
-                MAXVAL=127
-                STEP=30
-                ;;
-am387x-evm|am389x-evm|am335x-evm|dm385-evm|am43xx-gpevm)
-                CAPTURE_NAME="PGA Capture Volume";
-                PLAYBACK_NAME="PCM Playback Volume"
-                MINVAL=0
-                MAXVAL=127
-                STEP=30
-                ;;
-am43xx-epos)
-                CAPTURE_NAME="ADC Capture Volume";
-                PLAYBACK_NAME="DAC Playback Volume"
-                MINVAL=0
-                MAXVAL=175
-                STEP=30
-                ;;
-esac
+########################### DO WORK ##########################
+echo "==========================Switch Infomation=========================="
+amixer -c ${CARD} contents | grep Volume -A3
 
+echo "==========================Sound Infomation==========================="
+echo -e "Sound_Info:\n$PLAYBACK_SOUND_INFO" #actually is Playback_Sound_Info
+echo "Test device is $DEVICE"
+echo "Test card is $CARD"
 
+NUMBER_OF_VOLUME_OPTIONS=( $(amixer -c ${CARD} contents | grep Volume | cut -d = -f 4 | wc -l) )
+echo "Number of Switches is $NUMBER_OF_VOLUME_OPTIONS"
 
-########################### REUSABLE TEST LOGIC ###############################
+echo "==========================Start Test=========================="
+#Test each volume item 1+4*4=17 times, 3 seconds per test,3*17=51 seconds
+TEST_TIME=$((NUMBER_OF_VOLUME_OPTIONS*51))
+echo "Test time is $TEST_TIME seconds"
 
-amixer -c ${CARD} controls
-amixer -c ${CARD} contents
-arecord -D ${DEVICE} -f dat -d 1000 | aplay -D {DEVICE} -f dat -d 1000&
-do_cmd amixer -c ${CARD} cset name=\'$PLAYBACK_NAME\' $PLYMAXVAL,$PLYMAXVAL
-sleep 15
+arecord -D ${DEVICE} -f dat -d $TEST_TIME | aplay -D ${DEVICE} -f dat -d $TEST_TIME &
+sleep 3 # There is a delay in calling the audio device
 
-i=$MINVAL
-j=$MINVAL
-while [[ $i -lt $MAXVAL ]]
-do
-	j=$MINVAL
-	while [[ $j -lt $MAXVAL ]]
+#Test different volume items
+i=0
+while [[ $i -lt $NUMBER_OF_VOLUME_OPTIONS ]]
+do	
+	VOLUME_SWITCH_NAME="$(amixer -c ${CARD} controls | grep Volume | cut -d = -f 4 | awk 'FNR=='$i+1'')"
+	echo "================$VOLUME_SWITCH_NAME Test================"
+
+	#The default minimum value is 0, 
+	#and the left and right channel volume has the same maximum value.
+	VOLUME_MIN=0
+	VOLUME_MAX="$(amixer -c ${CARD} contents | grep Volume -A3 | grep max | cut -d = -f 6 | cut -d , -f 1 | awk 'FNR=='$i+1'')"
+	STEP=$[$VOLUME_MAX/3] #Test step size, the volume is adjusted each time by this step
+	echo "The maximum volume is $VOLUME_MAX, the minimum value is $VOLUME_MIN,test step is $STEP"
+
+	#Set the maximum value before changing the volume test
+	do_cmd amixer -c ${CARD} cset name=$VOLUME_SWITCH_NAME $VOLUME_MAX,$VOLUME_MAX
+	sleep 3
+
+	#Change the left channel volume after looping the right channel volume
+	j=$VOLUME_MIN
+	while [[ $j -le $VOLUME_MAX ]]
 	do
-		do_cmd amixer -c ${CARD} cset name=\'$PLAYBACK_NAME\' $i,$j
-		sleep 15
+		#Keep the left channel volume unchanged and test the right channel volume
+		k=$VOLUME_MIN
+		while [[ $k -le $VOLUME_MAX ]]
+		do
+			do_cmd amixer -c ${CARD} cset name=$VOLUME_SWITCH_NAME $j,$k
+			sleep 3
+			let "k += $STEP"
+		done
 		let "j += $STEP"
-	done	
-	let "i += $STEP"
-	sleep 15
-
+	done
+	let "i += 1"
 done
-
-i=$MINVAL
-j=$MINVAL
-while [[ $i -lt $MAXVAL ]]
-do
-	j=$MINVAL
-	while [[ $j -lt $MAXVAL ]]
-	do
-		do_cmd amixer -c ${CARD} cset name=\'$CAPTURE_NAME\' $i,$j
-		sleep 15		
-		let "j += $STEP"
-	done	
-	let "i += $STEP"
-	sleep 15
-
-done
-
-
