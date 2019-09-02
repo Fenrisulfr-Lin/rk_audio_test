@@ -52,15 +52,11 @@ done
 echo "Starting speaker-test TEST"
 TEST_LOOP=5
 
-LOG_FILE=/tmp/rk_speaker_test_log.txt
-rm -f $log_file
-"$@" >$log_file 2>&1
-
 TEST_FORMAT=(S16_LE S16_BE FLOAT_LE S32_LE S32_BE)
 i=0
 while [[ $i -lt 5 ]] #String cannot be judged non-empty
 do	
-	do_cmd speaker-test -c 2 --format ${TEST_FORMAT[$i]} -l $TEST_LOOP >>$log_file
+	do_cmd speaker-test -c 2 --format ${TEST_FORMAT[$i]} -l $TEST_LOOP
 	let "i += 1"
 done
 
@@ -77,7 +73,7 @@ TEST_RATE=(8000 11025 16000 22050 24000 32000 44100 48000 88200 96000)
 i=0
 while [[ TEST_RATE[$i] -ne '' ]]
 do
-	do_cmd speaker-test -c 2 -r ${TEST_RATE[$i]}  -l $TEST_LOOP
+	do_cmd speaker-test -c 2 -r ${TEST_RATE[$i]} -l $TEST_LOOP
 	let "i += 1"
 done
 
@@ -85,7 +81,7 @@ TEST_PERIOD=(1 2 4 8 16 32 64 128 256 512 1024 2046 4096 8192 16384 32768)
 i=0
 while [[ TEST_PERIOD[$i] -ne '' ]]
 do
-	do_cmd speaker-test -c 2 --period ${TEST_PERIOD[$i]}  -l $TEST_LOOP
+	do_cmd speaker-test -c 2 --period ${TEST_PERIOD[$i]} -l $TEST_LOOP
 	let "i += 1"
 done
 
@@ -93,7 +89,7 @@ TEST_BUFFER=(64 512 4096 32768 65536)
 i=0
 while [[ TEST_BUFFER[$i] -ne '' ]]
 do
-	do_cmd speaker-test -c 2 --period ${TEST_BUFFER[$i]}  -l $TEST_LOOP
+	do_cmd speaker-test -c 2 --period ${TEST_BUFFER[$i]} -l $TEST_LOOP
 	let "i += 1"
 done
 
