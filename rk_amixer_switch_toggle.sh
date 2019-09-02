@@ -67,9 +67,9 @@ CARD=$(echo "${DEVICE}" | cut -c 4)
 
 ########################### DO WORK ###############################
 
-#amixer -c ${CARD} controls  #More detailed but may not be necessary
+#amixer -c ${CARD} contents |grep Switch -A2  #More detailed but may not be necessary
 echo "==========================Switch Infomation=========================="
-amixer -c ${CARD} contents | grep Switch 
+amixer -c ${CARD} controls | grep Switch 
 
 echo "==========================Sound Infomation==========================="
 echo -e "Sound_Info:\n$PLAYBACK_SOUND_INFO" #actually is Playback_Sound_Info
@@ -77,12 +77,14 @@ echo "The number of test_loop is $TEST_LOOP"
 echo "Test device is $DEVICE"
 echo "Test card is $CARD"
 
-NUMBER_OF_SWITHCES=( $(amixer -c ${CARD} contents | grep Switch | cut -d = -f 4 | wc -l) )
+NUMBER_OF_SWITHCES=( $(amixer -c ${CARD} controls | grep Switch | cut -d = -f 4 | wc -l) )
 echo "Number of Switches is $NUMBER_OF_SWITHCES"
 
 echo "==========================Start Test=========================="
 #Start testing at the back without changing the switch
-TEST_TIME=$((NUMBER_OF_SWITHCES*5)) #5 Test each state of each switch for 5 seconds
+TEST_TIME=$((NUMBER_OF_SWITHCES*6)) #Test each state(0/1) of each switch for 3 seconds,3*2=6
+echo "Test time is $TEST_TIME seconds"
+
 arecord -D ${DEVICE} -f dat -d $TEST_TIME | aplay -D ${DEVICE} -f dat -d $TEST_TIME &
 sleep 3 # There is a delay in calling the audio device
 
@@ -92,7 +94,7 @@ do
 	j=0
         while [[ $j -lt $NUMBER_OF_SWITHCES ]]
         do
-                SWITCH_NAME="$(amixer -c ${CARD} contents | grep Switch | cut -d = -f 4 | awk 'FNR=='$j+1'')" #awk star from 1 not 0
+                SWITCH_NAME="$(amixer -c ${CARD} controls | grep Switch | cut -d = -f 4 | awk 'FNR=='$j+1'')" #awk star from 1 not 0
                 echo "================$SWITCH_NAME Test================"
 
                 #Get the initial value of the switch
@@ -102,15 +104,15 @@ do
                 #Test according to different initial values
                 if [ $SWITCH_VALUES == 1 ];then
                         do_cmd amixer -c ${CARD} cset name=$SWITCH_NAME 0
-                        sleep 5
+                        sleep 3
                         do_cmd amixer -c ${CARD} cset name=$SWITCH_NAME 1
-                        sleep 5
+                        sleep 3
                 fi
                 if [ $SWITCH_VALUES == 0 ];then
                         do_cmd amixer -c ${CARD} cset name=$SWITCH_NAME 1
-                        sleep 5
+                        sleep 3
                         do_cmd amixer -c ${CARD} cset name=$SWITCH_NAME 0
-                        sleep 5
+                        sleep 3
                 fi
                 let "j += 1"
         done
