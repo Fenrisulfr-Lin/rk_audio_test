@@ -41,6 +41,12 @@ do_cmd()
 		echo "|PASS|:$CMD passed."
 	fi
 }
+
+die() 
+{
+        echo "|ERROR|$*"
+        exit 1
+}
 ################################ CLI Params ####################################
 # Please use getopts
 while getopts  :l:D:h arg
