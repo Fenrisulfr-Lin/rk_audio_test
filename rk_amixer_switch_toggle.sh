@@ -35,7 +35,6 @@ do_cmd()
 	RESULT=$?
 	if [ $RESULT -ne 0 ];then
 		echo "|FAIL|:$CMD failed. Return code is $RESULT"
-		exit $RESULT
 	fi
 	if [ $RESULT -eq 0 ];then
 		echo "|PASS|:$CMD passed."
@@ -61,8 +60,8 @@ done
 
 #Use aplay to get information by default
 PLAYBACK_SOUND_INFO="$(aplay -l | grep -i card)"
-PLAYBACK_SOUND_CARDS=( $(aplay -l | grep -i card | cut -d , -f 1 | grep -o '[0-9]\+:' | cut -c 1) )
-PLAYBACK_SOUND_DEVICE=($(aplay -l | grep -i card | cut -d , -f 2 | grep -o '[0-9]\+:' | cut -c 1) )
+PLAYBACK_SOUND_CARDS=( $(aplay -l | grep -i card | grep -o '[0-9]\+:' | cut -c 1 | awk 'FNR==1') )
+PLAYBACK_SOUND_DEVICE=($(aplay -l | grep -i card | grep -o '[0-9]\+:' | cut -c 1 | awk 'FNR==2') )
 
 # Define default values 
 : ${TEST_LOOP:=1}
@@ -73,7 +72,7 @@ CARD=$(echo "${DEVICE}" | cut -c 4)
 
 ########################### DO WORK ###############################
 
-#amixer -c ${CARD} contents |grep Switch -A2  #More detailed but may not be necessary
+#amixer -c ${CARD} contents |grep Switch -A2  #More detailed but may   not be necessary
 echo "==========================Switch Infomation=========================="
 amixer -c ${CARD} controls | grep Switch 
 

@@ -33,7 +33,7 @@ do_cmd()
 	RESULT=$?
 	if [ $RESULT -ne 0 ];then
 		echo "|FAIL|:$CMD failed. Return code is $RESULT"
-		exit $RESULT
+		#If use 'exit $RESULT', then a test error occurs, subsequent tests cannot continue
 	fi
 	if [ $RESULT -eq 0 ];then
 		echo "|PASS|:$CMD passed."
@@ -52,9 +52,9 @@ done
 echo "Starting speaker-test TEST"
 TEST_LOOP=5
 
-TEST_FORMAT=(S16_LE S16_BE FLOAT_LE S32_LE S32_BE)
+TEST_FORMAT=(S8 S16_LE S16_BE FLOAT_LE S32_LE S32_BE)
 i=0
-while [[ $i -lt 5 ]] #String cannot be judged non-empty
+while [[ $i -lt 6 ]] #String cannot be judged non-empty
 do	
 	do_cmd speaker-test -c 2 --format ${TEST_FORMAT[$i]} -l $TEST_LOOP
 	let "i += 1"

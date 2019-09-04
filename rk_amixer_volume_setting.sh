@@ -34,7 +34,6 @@ do_cmd()
 	RESULT=$?
 	if [ $RESULT -ne 0 ];then
 		echo "|FAIL|:$CMD failed. Return code is $RESULT"
-		exit $RESULT
 	fi
 	if [ $RESULT -eq 0 ];then
 		echo "|PASS|:$CMD passed."
@@ -59,11 +58,11 @@ done
 
 #Use aplay to get information by default
 PLAYBACK_SOUND_INFO="$(aplay -l | grep -i card)"
-PLAYBACK_SOUND_CARDS=( $(aplay -l | grep -i card | cut -d , -f 1 | grep -o '[0-9]\+:' | cut -c 1) )
-PLAYBACK_SOUND_DEVICE=($(aplay -l | grep -i card | cut -d , -f 2 | grep -o '[0-9]\+:' | cut -c 1) )
+PLAYBACK_SOUND_CARDS=( $(aplay -l | grep -i card | grep -o '[0-9]\+:' | cut -c 1 | awk 'FNR==1') )
+PLAYBACK_SOUND_DEVICE=($(aplay -l | grep -i card | grep -o '[0-9]\+:' | cut -c 1 | awk 'FNR==2') )
 
 #If the -D parameter is not used. Default test the first sound card obtained by aplay
-: ${DEVICE:="hw:${PLAYBACK_SOUND_CARDS},${PLAYBACK_SOUND_DEVICE}"}
+: ${DEVICE:=$(echo "hw:${PLAYBACK_SOUND_CARDS},${PLAYBACK_SOUND_DEVICE}" | grep 'hw:[0-9]' || echo 'hw:0,0')}
 CARD=$(echo "${DEVICE}" | cut -c 4)
 
 ########################### DO WORK ##########################
