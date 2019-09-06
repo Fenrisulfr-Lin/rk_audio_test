@@ -146,3 +146,4 @@ rk_alsa_tests_result
 |PASS|:arecord -D hw:0,0 -f S16_LE ALSA_L_STRESS_CAPTURE.snd -d 1000 -r 8000 -c 2   --buffer-size=64 --period-size 32 passed.
 |PASS|:aplay -D hw:0,0 -f S16_LE ALSA_L_STRESS_CAPTURE.snd -d 1000 -r 8000 -f S16_LE -c 2   --buffer-size=64 --period-size 32 passed.
 |PASS|:arecord -D hw:0,0 -f S16_LE -d 1000 -r 8000 -c 2   --buffer-size=64 --period-size 32 | aplay -D hw:0,0 -f S16_LE -d 1000 -r 8000 -c 2   --buffer-size=64 --period-size 32 passed.
+|PASS|:arecord -D hw:0,0 -f S16_LE -d 10 -r 48000 -c 2   --buffer-size=16 --period-size 8 | aplay -D hw:0,0 -f S16_LE -d 10 -r 48000 -c 2   --buffer-size=16 --period-size 8 passed.

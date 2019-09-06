@@ -12,10 +12,11 @@
 # of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# @desc Varies the volume by playing the audio in backgroung using amixer interface.
+# @desc Varies the volume by playing the audio in backgroung 
+#       using amixer interface.
 # @params  none.
 
-############################# Functions #######################################
+############################## Functions #######################################
 usage()
 {
 	cat <<-EOF >&2
@@ -58,60 +59,73 @@ done
 
 #Use aplay to get information by default
 PLAYBACK_SOUND_INFO="$(aplay -l | grep -i card)"
-PLAYBACK_SOUND_CARDS=( $(aplay -l | grep -i card | grep -o '[0-9]\+:' | cut -c 1 | awk 'FNR==1') )
-PLAYBACK_SOUND_DEVICE=($(aplay -l | grep -i card | grep -o '[0-9]\+:' | cut -c 1 | awk 'FNR==2') )
+PLAYBACK_SOUND_CARDS=( $(aplay -l | grep -i card | grep -o '[0-9]\+:' | \
+						cut -c 1 | awk 'FNR==1') )
+PLAYBACK_SOUND_DEVICE=($(aplay -l | grep -i card | grep -o '[0-9]\+:' | \
+						cut -c 1 | awk 'FNR==2') )
 
-#If the -D parameter is not used. Default test the first sound card obtained by aplay
-: ${DEVICE:=$(echo "hw:${PLAYBACK_SOUND_CARDS},${PLAYBACK_SOUND_DEVICE}" | grep 'hw:[0-9]' || echo 'hw:0,0')}
+#If the -D parameter is not used. 
+#Default test the first sound card obtained by aplay.
+: ${DEVICE:=$(echo "hw:${PLAYBACK_SOUND_CARDS},${PLAYBACK_SOUND_DEVICE}" | \
+					grep 'hw:[0-9]' || echo 'hw:0,0')}
 CARD=$(echo "${DEVICE}" | cut -c 4)
 
 ########################### DO WORK ##########################
-echo "==========================Switch Infomation=========================="
+echo "============================Switch Infomation============================"
 amixer -c ${CARD} contents | grep Volume -A3
 
-echo "==========================Sound Infomation==========================="
+echo "============================Sound Infomation============================="
 echo -e "Sound_Info:\n$PLAYBACK_SOUND_INFO" #actually is Playback_Sound_Info
 echo "Test device is $DEVICE"
 echo "Test card is $CARD"
 
-NUMBER_OF_VOLUME_OPTIONS=( $(amixer -c ${CARD} contents | grep Volume | cut -d = -f 4 | wc -l) )
+NUMBER_OF_VOLUME_OPTIONS=( $(amixer -c ${CARD} contents | grep Volume | \
+						cut -d = -f 4 | wc -l) )
 echo "Number of Switches is $NUMBER_OF_VOLUME_OPTIONS"
 
-echo "==========================Start Test=========================="
+echo "===============================Start Test================================"
 #Test each volume item 1+4*4=17 times, 3 seconds per test,3*17=51 seconds
 TEST_TIME=$((NUMBER_OF_VOLUME_OPTIONS*51))
 echo "Test time is $TEST_TIME seconds"
 
-arecord -D ${DEVICE} -f dat -d $TEST_TIME | aplay -D ${DEVICE} -f dat -d $TEST_TIME &
+arecord -D ${DEVICE} -f dat -d $TEST_TIME | aplay -D ${DEVICE} \
+					-f dat -d $TEST_TIME &
 sleep 3 # There is a delay in calling the audio device
 
 #Test different volume items
 i=0
 while [[ $i -lt $NUMBER_OF_VOLUME_OPTIONS ]]
 do	
-	VOLUME_SWITCH_NAME="$(amixer -c ${CARD} controls | grep Volume | cut -d = -f 4 | awk 'FNR=='$i+1'')"
-	echo "================$VOLUME_SWITCH_NAME Test================"
+	VOLUME_SWITCH_NAME="$(amixer -c ${CARD} controls | grep Volume | \
+					cut -d = -f 4 | awk 'FNR=='$i+1'')"
+	echo "======================$VOLUME_SWITCH_NAME Test==================="
 
 	#The default minimum value is 0, 
 	#and the left and right channel volume has the same maximum value.
 	VOLUME_MIN=0
-	VOLUME_MAX="$(amixer -c ${CARD} contents | grep Volume -A3 | grep max | cut -d = -f 6 | cut -d , -f 1 | awk 'FNR=='$i+1'')"
-	STEP=$[$VOLUME_MAX/3] #Test step size, the volume is adjusted each time by this step
-	echo "The maximum volume is $VOLUME_MAX, the minimum value is $VOLUME_MIN,test step is $STEP"
+	VOLUME_MAX="$(amixer -c ${CARD} contents | grep Volume -A3 | \
+		grep max | cut -d = -f 6 | cut -d , -f 1 | awk 'FNR=='$i+1'')"
+
+	#Test step size, the volume is adjusted each time by this step
+	STEP=$[$VOLUME_MAX/3] 
+	echo "The maximum volume is $VOLUME_MAX," \
+	     "the minimum value is $VOLUME_MIN,test step is $STEP"
 
 	#Set the maximum value before changing the volume test
-	do_cmd amixer -c ${CARD} cset name=$VOLUME_SWITCH_NAME $VOLUME_MAX,$VOLUME_MAX
+	do_cmd amixer -c ${CARD} \
+	       cset name=$VOLUME_SWITCH_NAME $VOLUME_MAX,$VOLUME_MAX
 	sleep 3
 
 	#Change the left channel volume after looping the right channel volume
 	j=$VOLUME_MIN
 	while [[ $j -le $VOLUME_MAX ]]
 	do
-		#Keep the left channel volume unchanged and test the right channel volume
+		#Keep left channel volume unchanged,change right channel volume
 		k=$VOLUME_MIN
 		while [[ $k -le $VOLUME_MAX ]]
 		do
-			do_cmd amixer -c ${CARD} cset name=$VOLUME_SWITCH_NAME $j,$k
+			do_cmd amixer -c ${CARD} \
+			       cset name=$VOLUME_SWITCH_NAME $j,$k
 			sleep 3
 			let "k += $STEP"
 		done

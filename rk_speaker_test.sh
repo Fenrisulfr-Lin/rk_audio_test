@@ -1,5 +1,5 @@
 #! /bin/bash
-############################################################################### 
+################################################################################ 
 # Copyright (C) 2011 Texas Instruments Incorporated - http://www.ti.com/
 # Copyright (C) 2019 Fuzhou Rockchip Electronics Co.,Ltd
 #
@@ -14,7 +14,7 @@
 #
 # @desc Run speaker-test utility with all available options to test sound output 
 
-############################# Functions #######################################
+############################# Functions ########################################
 usage()
 {
 	echo "rk_speaker_test.sh [For options (see speaker-test help)"
@@ -31,15 +31,16 @@ do_cmd()
 	echo -e "\n|LOG|CMD=$CMD"
 	eval $CMD
 	RESULT=$?
+	#If use 'exit $RESULT', 
+	#then a test error occurs, subsequent tests cannot continue
 	if [ $RESULT -ne 0 ];then
-		echo "|FAIL|:$CMD failed. Return code is $RESULT"
-		#If use 'exit $RESULT', then a test error occurs, subsequent tests cannot continue
+		echo "|FAIL|:$CMD failed. Return code is $RESULT"	
 	fi
 	if [ $RESULT -eq 0 ];then
 		echo "|PASS|:$CMD passed."
 	fi
 }
-################################ CLI Params ###################################
+################################ CLI Params ####################################
 # Please use getopts
 while getopts  :H:h arg
 do case $arg in
@@ -48,7 +49,13 @@ do case $arg in
         \?)     ;;
 esac
 done
-########################### TEST ##############################################
+################################# TEST #########################################
+#record result and time
+startTime=`date +%Y%m%d-%H:%M`
+startTime_s=`date +%s`
+echo "rk_alsa_tests_result" > rk_speaker_test_result.log
+echo "$startTime" >> rk_speaker_test_result.log
+
 echo "Starting speaker-test TEST"
 TEST_LOOP=5
 
@@ -94,3 +101,14 @@ do
 done
 
 do_cmd speaker-test -c 2 -t wave -l 1000
+
+#echo total running time
+endTime=`date +%Y%m%d-%H:%M`
+endTime_s=`date +%s`
+sumTime_s=$[ $endTime_s - $startTime_s ]
+sumTime_m=$[ $sumTime_s / 60 ]
+sumTime_s=$[ $sumTime_s - $sumTime_m * 60 ] 
+
+echo "$startTime ---> $endTime" \
+     "Total running time:$sumTime_m minutes and $sumTime_s seconds" \
+     >> rk_speaker_test_result.log
