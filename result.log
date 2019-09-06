@@ -1,5 +1,5 @@
 rk_alsa_tests_result
-20190904-18:03
+20190905-18:11
 |PASS|:arecord -D hw:0,0 -f S16_LE -d 10 -r 8000 -c 2   --buffer-size=64 --period-size 32 | aplay -D hw:0,0 -f S16_LE -d 10 -r 8000 -c 2   --buffer-size=64 --period-size 32 passed.
 |PASS|:arecord -D hw:0,0 -f S16_LE -d 10 -r 8000 -c 2 -M  --buffer-size=64 --period-size 32 | aplay -D hw:0,0 -f S16_LE -d 10 -r 8000 -c 2 -M  --buffer-size=64 --period-size 32 passed.
 |PASS|:arecord -D hw:0,0 -f S16_LE -d 60 -r 8000 -c 2   --buffer-size=64 --period-size 32 | aplay -D hw:0,0 -f S16_LE -d 60 -r 8000 -c 2   --buffer-size=64 --period-size 32 passed.
