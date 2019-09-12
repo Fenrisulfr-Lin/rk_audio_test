@@ -1,15 +1,60 @@
 #!/bin/bash
+#
+# Copyright (C) 2013-2016 Intel Corporation
+# Copyright (C) 2019 Fuzhou Rockchip Electronics Co.,Ltd
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# @desc Use the alsabat tool to perform various tests
+# @features 0) generate mono wav file with default params
+#	    1) generate dual wav file with default params
+#           2) single line mode, playback
+#           3) single line mode, capture
+#           4) play mono wav file and detect
+#           5) play dual wav file and detect
+#           6) configurable channel number: 1
+#           7) configurable channel number: 2
+#           8) configurable sample rate: 44100
+#           9) configurable sample rate: 48000
+#           10) configurable duration: in samples
+#           11) configurable duration: in seconds
+#           12) configurable data format: U8
+#           13) configurable data format: S16_LE
+#           14) configurable data format: S24_3LE
+#           15) configurable data format: S32_LE
+#           16) configurable data format: cd
+#           17) configurable data format: dat
+#           18) standalone mode: play and capture
+#           19) local mode: analyze local file
+#           20) round trip latency test
+#           21) noise detect threshold in SNR(dB)
+#           22) noise detect threshold in noise percentage(%)
+#           23) power management: S3 test
 
-# default devices
-dev_playback="default"
-dev_capture="default"
+#record result and time
+startTime=`date +%Y%m%d-%H:%M`
+startTime_s=`date +%s`
+echo "start time:$startTime" 
+
+# default devices ,default value is plughw:0,0
+
+play_device="default" 
+rec_device="default"
 
 bin="alsabat"
-commands="$bin -P $dev_playback -C $dev_capture"
+commands="$bin -P $play_device -C $rec_device"
 
 file_sin_mono="default_mono.wav"
 file_sin_dual="default_dual.wav"
-logdir="tmp"
+logdir="log_rk_alsabat_test"
 
 # frequency range of signal
 maxfreq=16547
@@ -19,16 +64,8 @@ minfreq=17
 sleep_time=5
 pause_time=2
 
-# features passes vs. features all
-feature_pass=0
-feature_cnt=0
-
-init_counter () {
-	feature_pass=0
-	feature_all=0
-}
-
-evaluate_result () {
+evaluate_result () 
+{
 	feature_cnt=$((feature_cnt+1))
 	if [ $1 -eq 0 ]; then
 		feature_pass=$((feature_pass+1))
@@ -38,11 +75,8 @@ evaluate_result () {
 	fi
 }
 
-print_result () {
-	echo "[$feature_pass/$feature_cnt] features passes."
-}
-
-feature_test () {
+feature_test () 
+{
 	echo "============================================"
 	echo "$feature_cnt: ALSA $2"
 	echo "-------------------------------------------"
@@ -52,7 +86,8 @@ feature_test () {
 	echo "$commands $1" >> $logdir/$((feature_cnt-1)).log
 }
 
-feature_test_power () {
+feature_test_power () 
+{
 	echo "============================================"
 	echo "$feature_cnt: ALSA $2"
 	echo "-------------------------------------------"
@@ -81,72 +116,83 @@ feature_test_power () {
 	echo "$commands $1" >> $logdir/$((feature_cnt-1)).log
 }
 
-# test items
-feature_list_test () {
-	init_counter
-
-	commands="$bin"
-	feature_test "-c1 --saveplay $file_sin_mono" \
-			"generate mono wav file with default params"
-	feature_test "-c2 --saveplay $file_sin_dual" \
-			"generate dual wav file with default params"
-	sleep 5
-	feature_test "-P $dev_playback" "single line mode, playback"
-	feature_test "-C $dev_capture --standalone" "single line mode, capture"
-
-	commands="$bin -P $dev_playback -C $dev_capture"
-	feature_test "--file $file_sin_mono" "play mono wav file and detect"
-	feature_test "--file $file_sin_dual" "play dual wav file and detect"
-	feature_test "-c1" "configurable channel number: 1"
-	feature_test "-c2 -F $minfreq:$maxfreq" "configurable channel number: 2"
-	feature_test "-r44100" "configurable sample rate: 44100"
-	feature_test "-r48000" "configurable sample rate: 48000"
-	feature_test "-n10000" "configurable duration: in samples"
-	feature_test "-n2.5s" "configurable duration: in seconds"
-	feature_test "-f U8" "configurable data format: U8"
-	feature_test "-f S16_LE" "configurable data format: S16_LE"
-	feature_test "-f S24_3LE" "configurable data format: S24_3LE"
-	feature_test "-f S32_LE" "configurable data format: S32_LE"
-	feature_test "-f cd" "configurable data format: cd"
-	feature_test "-f dat" "configurable data format: dat"
-	feature_test "-F $maxfreq --standalone" \
-			"standalone mode: play and capture"
-	latestfile=`ls -t1 /tmp/bat.wav.* | head -n 1`
-	feature_test "--local -F $maxfreq --file $latestfile" \
-			"local mode: analyze local file"
-	feature_test "--roundtriplatency" \
-			"round trip latency test"
-	feature_test "--snr-db 26" \
-			"noise detect threshold in SNR(dB)"
-	feature_test "--snr-pc 5" \
-			"noise detect threshold in noise percentage(%)"
-	feature_test_power "-n5s" "power management: S3 test"
-
-	print_result
-}
-
 echo "*******************************************"
-echo "                BAT Test                   "
+echo "             rk alsabat test               "
 echo "-------------------------------------------"
 
 # get device
 echo "usage:"
-echo "  $0 <sound card>"
-echo "  $0 <device-playback> <device-capture>"
+echo "  bash $0 <sound card> "
+echo "  bash $0 <device-playback> <device-capture>"
+echo "  like bash $0 plughw:0,0 plughw:0,0 "
 
 if [ $# -eq 2 ]; then
-	dev_playback=$1
-	dev_capture=$2
+	play_device=$1
+	rec_device=$2
 elif [ $# -eq 1 ]; then
-	dev_playback=$1
-	dev_capture=$1
+	play_device=$1
+	rec_device=$1
 fi
 
 echo "current setting:"
-echo "  $0 $dev_playback $dev_capture"
+echo "bash $0 $play_device $rec_device"
 
-# run
+# run test
 mkdir -p $logdir
-feature_list_test
 
-echo "*******************************************"
+#features passes vs. features all
+feature_pass=0
+feature_cnt=0
+feature_all=0
+sigma_k=30.0
+
+#0
+feature_test "-c1 --saveplay $file_sin_mono -k $sigma_k" \
+		"generate mono wav file with default params"
+feature_test "-c2 --saveplay $file_sin_dual -k $sigma_k" \
+		"generate dual wav file with default params"
+sleep 5
+feature_test "-P $play_device" "single line mode, playback"
+feature_test "-C $rec_device --standalone" "single line mode, capture"
+
+feature_test "--file $file_sin_mono -k $sigma_k" "play mono wav file and detect"
+feature_test "--file $file_sin_dual -k $sigma_k" "play dual wav file and detect"
+feature_test "-c1 -k $sigma_k" "configurable channel number: 1"
+feature_test "-c2 -F $minfreq:$maxfreq -k $sigma_k" \
+	     "configurable channel number: 2"
+feature_test "-r44100 -k $sigma_k" "configurable sample rate: 44100"
+#10
+feature_test "-r48000 -k $sigma_k" "configurable sample rate: 48000"
+feature_test "-n10000 -k $sigma_k" "configurable duration: in samples"
+feature_test "-n2.5s -k $sigma_k" "configurable duration: in seconds"
+
+feature_test "-f U8 -k $sigma_k" "configurable data format: U8"
+feature_test "-f S16_LE -k $sigma_k" "configurable data format: S16_LE"
+feature_test "-f S24_3LE -k $sigma_k" "configurable data format: S24_3LE"
+feature_test "-f S32_LE -k $sigma_k" "configurable data format: S32_LE"
+feature_test "-f cd -k $sigma_k" "configurable data format: cd"
+feature_test "-f dat -k $sigma_k" "configurable data format: dat"
+
+feature_test "--standalone" "standalone mode: play and capture"
+#the latest file generated by alsabat
+latestfile=`ls -t1 /tmp/bat.wav.* | head -n 1` 
+feature_test "--local -F $maxfreq --file $latestfile -k $sigma_k" \
+	     "local mode: analyze local file"
+#20
+feature_test "--roundtriplatency" "round trip latency test"
+feature_test "--snr-db 26 -k $sigma_k" "noise detect threshold in SNR(dB)"
+feature_test "--snr-pc 5 -k $sigma_k" \
+	     "noise detect threshold in noise percentage(%)"
+feature_test_power "-n5s -k $sigma_k" "power management: S3 test"
+
+echo "[$feature_pass/$feature_cnt] features passes."
+
+#echo total running time
+endTime=`date +%Y%m%d-%H:%M`
+endTime_s=`date +%s`
+sumTime_s=$[ $endTime_s - $startTime_s ]
+sumTime_m=$[ $sumTime_s / 60 ]
+sumTime_s=$[ $sumTime_s - $sumTime_m * 60 ] 
+
+echo "$startTime ---> $endTime" \
+     "Total running time: $sumTime_m minutes and $sumTime_s seconds"
