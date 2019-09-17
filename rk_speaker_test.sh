@@ -34,10 +34,11 @@ do_cmd()
 	#If use 'exit $RESULT', 
 	#then a test error occurs, subsequent tests cannot continue
 	if [ $RESULT -ne 0 ];then
-		echo "|FAIL|:$CMD failed. Return code is $RESULT"	
+		echo "|FAIL|:$CMD failed. Return code is $RESULT" \
+		     >> rk_speaker_test_result.log	
 	fi
 	if [ $RESULT -eq 0 ];then
-		echo "|PASS|:$CMD passed."
+		echo "|PASS|:$CMD passed." >> rk_speaker_test_result.log
 	fi
 }
 ################################ CLI Params ####################################
@@ -57,7 +58,7 @@ echo "rk_alsa_tests_result" > rk_speaker_test_result.log
 echo "$startTime" >> rk_speaker_test_result.log
 
 echo "Starting speaker-test TEST"
-TEST_LOOP=5
+TEST_LOOP=2
 
 TEST_FORMAT=(S8 S16_LE S16_BE FLOAT_LE S32_LE S32_BE)
 i=0

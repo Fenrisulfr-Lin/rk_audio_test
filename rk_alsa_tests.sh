@@ -17,8 +17,8 @@
 #record result and time
 startTime=`date +%Y%m%d-%H:%M`
 startTime_s=`date +%s`
-echo "rk_alsa_tests_result" > result.log
-echo "$startTime" >> result.log
+echo "rk_alsa_tests_result" > rk_alsa_tests_result.log
+echo "$startTime" >> rk_alsa_tests_result.log
 
 CAPTURE_SOUND_CARDS=( $(arecord -l | grep -i card | grep -o '[0-9]\+:' |\
                                                 cut -c 1 | awk 'FNR==1') )
@@ -98,8 +98,8 @@ do
 done
 
 #================================alsa_buffersize================================
-# @name ALSA memory access type test
-# @desc Loopback and Capture the audio with various buffersizes.
+# @name Testing for various buffer sizes
+# @desc Loopback and Capture the audio with various buffer izes.
 TEST_BUFFERSIZE=(64 512 32768 65536)
 i=0
 while [[ TEST_BUFFERSIZE[$i] -ne '' ]]
@@ -204,4 +204,4 @@ sumTime_m=$[ $sumTime_m - $sumTime_h * 60 ]
 
 echo "$startTime ---> $endTime" \
      "Total running time:$sumTime_h hours," \
-     "$sumTime_m minutes and $sumTime_s seconds" >> result.log
+     "$sumTime_m minutes and $sumTime_s seconds" >> rk_alsa_tests_result.log

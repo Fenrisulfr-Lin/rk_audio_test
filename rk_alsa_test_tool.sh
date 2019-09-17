@@ -80,11 +80,12 @@ do_cmd()
 	eval $CMD
 	RESULT=$?
 	if [ $RESULT -ne 0 ];then
-		echo "|FAIL|:$CMD failed. Return code is $RESULT" >> result.log
+		echo "|FAIL|:$CMD failed. Return code is $RESULT" \
+		     >> rk_alsa_tests_result.log
 		exit $RESULT
 	fi
 	if [ $RESULT -eq 0 ];then
-		echo "|PASS|:$CMD passed." >> result.log
+		echo "|PASS|:$CMD passed." >> rk_alsa_tests_result.log
 	fi
 }
 
@@ -152,6 +153,9 @@ fi
 : ${CAPTURELOGFLAG:='0'}
 PLAY_CARD_ID=${PLAY_DEVICE:3:1}
 REC_CARD_ID=${REC_DEVICE:3:1}
+
+let PERIODSIZE=PERIODSIZE*8 #avoid xrun 
+let BUFFERSIZE=BUFFERSIZE*8 #avoid xrun 
 
 audio_type='stereo'
 if [ $CHANNEL -eq 1 ] ; then
