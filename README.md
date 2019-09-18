@@ -1,10 +1,12 @@
 # rk_audio_test  
+
 　　Refer to the audio test contents of LTP-DDT, NXP, and BAT  
 to rewrite and improve compatibility on the RK platform.  
-  
-**##test**:  
-  
-**###0.rk_alsabat_test.sh**  
+
+## **test script**:  
+
+### **0.rk_alsabat_test.sh**  
+
 　　Use the alsabat tool to perform various tests.  
 　　**Can automatically analyze test results.**  
 　　**But need external loopback.**  
@@ -32,8 +34,9 @@ to rewrite and improve compatibility on the RK platform.
 　　　　0.21 noise detect threshold in SNR(dB)  
 　　　　0.22 noise detect threshold in noise percentage(%)  
 　　　　0.23 power management: S3 test  
-  
-**###1.rk_alsa_tests.sh**  
+
+### **1.rk_alsa_tests.sh**  
+
 　　Use rk_alsa_test_tool.sh for various audio tests  
 　　**The result can be automatically given**  
 　　**only if it is judged whether the configuration is successful.**  
@@ -47,40 +50,47 @@ to rewrite and improve compatibility on the RK platform.
 　　　　1.7 Testing for various sampling formats  
 　　　　1.8 Testing for higher sample rates  
 　　　　1.9 ALSA stress test  
-  
-**###2.rk_speaker_test.sh**  
+
+### **2.rk_speaker_test.sh**  
+
 　　Run speaker-test utility with all available options to test sound output.  
 　　**It is best to have manual monitoring,**  
 　　**or check the fail and error sections of the log after the test is complete.**  
-  
-**###3.rk_amixer_switch_toggle.sh**  
+
+### **3.rk_amixer_switch_toggle.sh**  
+
 　　Play audio in the background,  
 　　then use the amixer switch to test if the path is normal  
 　　　　**Need manual monitoring.**  
 　　　　**PASS only means the setting is successful,**  
-　　　　**but the audio channel may have been turned off and there is no sound.**  
-  
-**###4.rk_amixer_volume_setting.sh**  
-　　Play audio in the background,  
-　　then use amixer to set various volume levels.  
-　　　　**Need human monitoring.**  
-　　　　**PASS only means the setting is successful,but the volume may not change.**  
+　　　　**but the audio channel may have been turned off and there is no sound.**    
+
+### **4.rk_amixer_volume_setting.sh**  
+
+　　    Play audio in the background,  
+　　    then use amixer to set various volume levels.  
+　　　　        **Need human monitoring.**  
+　　　　        **PASS only means the setting is successful,but the volume may not change.**  
 　　
 　　
-**##tool/lib:**  
-  
-**###rk_alsa_test_tool.sh**  
+
+## **test tool/lib:**  
+
+### **rk_alsa_test_tool.sh**  
+
 　　Captures/Plays/loopbacks the audio for given parameters  
 　　Tool script for rk_alsa_tests.sh test  
-  
-**###alsa-utils-1.1.9**  
+
+### **alsa-utils-1.1.9**  
+
 　　Audio Test Kit, which is required for all scripts  
-  
-**###libfftw3**  
+
+### **libfftw3**  
+
 　　Used for noise detection tests of 0.21 and 0.22.  
-  
-**###rtcwake**  
+
+### **rtcwake**  
+
 　　Used for power management testing of 0.23.  
 　　Located in the util-linux toolkit.  
 　　This toolkit is available in the general environment.  
-
