@@ -67,10 +67,20 @@ to rewrite and improve compatibility on the RK platform.
   **PASS only means the setting is successful,but the volume may not change.**  
   
   
-**##tool:**  
+**##tool/lib:**  
   
 **###rk_alsa_test_tool.sh**  
   Captures/Plays/loopbacks the audio for given parameters  
+  Tool script for rk_alsa_tests.sh test  
   
-**###alsa-utils-1.1.9/libfftw3/rtcwake**  
-  Used for test.  
+**###alsa-utils-1.1.9**  
+  Audio Test Kit, which is required for all scripts  
+  
+**###libfftw3**  
+  Used for noise detection tests of 0.21 and 0.22.  
+  
+**###rtcwake**  
+  Used for power management testing of 0.23.  
+  Located in the util-linux toolkit.  
+  This toolkit is available in the general environment.  
+

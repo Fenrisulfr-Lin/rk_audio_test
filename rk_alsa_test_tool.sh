@@ -135,7 +135,7 @@ PLAYBACK_SOUND_DEVICE=($(aplay -l | grep -i card | grep -o '[0-9]\+:' | \
 : ${DEVICE:=$PLAY_DEVICE} #dafault use playback device
 
 : ${TYPE:='loopback'}
-: ${FILE:='test.snd'}
+: ${FILE:=' '}
 
 CAP_STRING=`aplay -D $DEVICE --dump-hw-params -d 1 /dev/zero 2>&1`
 if [ "$TYPE" == "capture" ] ; then

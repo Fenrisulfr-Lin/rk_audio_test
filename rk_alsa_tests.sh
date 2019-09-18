@@ -168,7 +168,7 @@ done
 TEST_FORMAT=(S8 S16_LE S24_LE S32_LE)
 i=0
 while [[ $i -lt 4 ]] #String cannot be judged non-empty
-do	
+do
 	bash rk_alsa_test_tool.sh -t capture -f ${TEST_FORMAT[$i]} \
              -F ALSA_M_FUNC_CAP_SAMPLE_FORMAT_${TEST_FORMAT[$i]}.snd
         bash rk_alsa_test_tool.sh -t playback -f ${TEST_FORMAT[$i]} \
