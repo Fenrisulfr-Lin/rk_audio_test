@@ -27,25 +27,24 @@ feature_all=0
 feature_test () 
 {
 	echo "============================================"
-	
-	echo "$feature_cnt : |LOG|CMD=$1" \
+	echo -e "\n$feature_cnt:|LOG| CMD=$*" \
 		| tee -a rk_alsa_sample_rate_test_result.log
 	echo "-------------------------------------------"
-	eval $1
+	eval $*
 	evaluate_result $?
 }
 evaluate_result () 
 {
-	feature_cnt=$((feature_cnt+1))
 	if [ $1 -eq 0 ]; then
 		feature_pass=$((feature_pass+1))
-		echo "|PASS|:$1 passed." \
+		echo "$feature_cnt:|PASS| The test passed successfully" \
 		      | tee -a rk_alsa_sample_rate_test_result.log
 	else
-		echo "|FAIL|:$1 failed. Return code is $RESULT" \
-		     "FAIL sampling rate : ${TEST_RATE[$i]}"\
+		echo "$feature_cnt:|FAIL| Return code is $1 ." \
+		     "Fail sample rate is ${TEST_RATE[$i]}" \
 		      | tee -a rk_alsa_sample_rate_test_result.log
 	fi
+	feature_cnt=$((feature_cnt+1))
 }
 
 ############################ Default Values for Params #########################
@@ -55,50 +54,59 @@ PLAYBACK_SOUND_DEVICE=($(aplay -l | grep -i card | grep -o '[0-9]\+:' | \
 						cut -c 1 | awk 'FNR==2') )
 : ${PLAY_DEVICE:=$(echo "hw:${PLAYBACK_SOUND_CARDS},${PLAYBACK_SOUND_DEVICE}" |\
 					 grep 'hw:[0-9]' || echo 'hw:0,0')}
+echo "PLAY_DEVICE is $PLAY_DEVICE"
 
+CAP_STRING=`aplay -D $PLAY_DEVICE --dump-hw-params -d 1 /dev/zero 2>&1`
+RATE_RANGE=`echo "$CAP_STRING" | grep -w RATE | tr -s " "`
+echo "HW_RATE_RANGE is $RATE_RANGE"
 
-TEST_RATE=(8000 11025 16000 22050 24000 32000 44100 48000 88200 96000 192000)
+RATE_RANGE_VALUE=`echo "$RATE_RANGE" | tr -s " " | cut -d " " -f 2,3 | \
+  					cut -d "[" -f 2 | cut -d "(" -f 2 | \
+					cut -d "]" -f 1 | cut -d ")" -f 1`
+RATE_RANGE_VALUE_MIN=`echo "$RATE_RANGE_VALUE" | cut -d " " -f 1`
+RATE_RANGE_VALUE_MAX=`echo "$RATE_RANGE_VALUE" | cut -d " " -f 2`
+
+RATE_VALUE=(8000 11025 16000 22050 24000 32000 44100 48000 88200 96000 192000)
+
+#Remove values that exceed the range of hardware supported sample rates
+i=0
+j=0
+while [[ RATE_VALUE[$i] -ne '' ]]
+do
+	if [[ RATE_VALUE[$i] -lt RATE_RANGE_VALUE_MIN ]] || \
+	   [[ RATE_VALUE[$i] -gt RATE_RANGE_VALUE_MAX ]];then
+		let "i += 1"
+	else
+		TEST_RATE[$j]=${RATE_VALUE[$i]}
+		let "i += 1"
+		let "j += 1"
+	fi
+done
+echo "TEST RATE is ${TEST_RATE[@]}"
+
 
 #speaker-test.Need manual detection
 i=0
 while [[ TEST_RATE[$i] -ne '' ]]
 do      
-	feature_test "speaker-test -r ${TEST_RATE[$i]} \
-			-l 2 -D $PLAY_DEVICE -c 2" 
+	feature_test speaker-test -r ${TEST_RATE[$i]} -l 2 -D $PLAY_DEVICE -c 2
 	let "i += 1"
 done
 sleep 5
 
-
-#capture/playback test.
-#The test result can be given automatically, 
-#but it is only judged whether the capture/playback/loopback
-#is successful under the setting.
-i=0
-while [[ TEST_RATE[$i] -ne '' ]]
-do      
-	feature_test "bash rk_alsa_test_tool.sh -t capture -r ${TEST_RATE[$i]}\
-			-F ALSA_SAMPLE_RATE_${TEST_RATE[$i]}.snd -d 5"
-
-        feature_test "bash rk_alsa_test_tool.sh -t playback -r ${TEST_RATE[$i]}\
-        		-F ALSA_SAMPLE_RATE_${TEST_RATE[$i]}.snd -d 5"	
-	let "i += 1"
-done
-sleep 5
 
 #alsabat test, requires external loopback,test plughw:x,x
 #Can automatically analyze test results.
-
 i=0
 sigma_k=30.0 ##Frequency detection threshold
 while [[ TEST_RATE[$i] -ne '' ]]
 do      
-	feature_test "alsabat -r ${TEST_RATE[$i]} -k $sigma_k" 
+	feature_test alsabat -r ${TEST_RATE[$i]} \
+			-k $sigma_k -D $PLAY_DEVICE -c 2
 	let "i += 1"
 done
 
-
-
+#echo all test result 
 echo "[$feature_pass/$feature_cnt] features passes." \
 				| tee -a rk_alsa_sample_rate_test_result.log
 
