@@ -135,7 +135,7 @@ PLAYBACK_SOUND_DEVICE=($(aplay -l | grep -i card | grep -o '[0-9]\+:' | \
 : ${DEVICE:=$PLAY_DEVICE} #dafault use playback device
 
 : ${TYPE:='loopback'}
-: ${FILE:=' '}
+: ${FILE:='test.snd'}
 
 CAP_STRING=`aplay -D $DEVICE --dump-hw-params -d 1 /dev/zero 2>&1`
 if [ "$TYPE" == "capture" ] ; then
@@ -156,6 +156,26 @@ REC_CARD_ID=${REC_DEVICE:3:1}
 
 let PERIODSIZE=PERIODSIZE*8 #avoid xrun 
 let BUFFERSIZE=BUFFERSIZE*8 #avoid xrun 
+if [ $PERIODSIZE -eq $BUFFERSIZE ] ; then
+	let BUFFERSIZE=BUFFERSIZE*2
+fi
+
+#get_default_val() function may be wrong,the default value will be assigned.
+if [ $SAMPLERATE -eq 0 ] ; then
+	SAMPLERATE="44100"
+fi
+
+if [ $PERIODSIZE -eq 0 ] ; then
+	PERIODSIZE="256"
+fi
+
+if [ $BUFFERSIZE -eq 0 ] ; then
+	BUFFERSIZE="512"
+fi
+
+if [ ! -n "$CHANNEL" ] ; then
+	CHANNEL=2
+fi
 
 audio_type='stereo'
 if [ $CHANNEL -eq 1 ] ; then
@@ -174,9 +194,6 @@ elif [ $ACCESSTYPE -eq 1 ] ; then
 	ACCESSTYPEARG="-M"  #mmap stream
 fi
 
-if [ $PERIODSIZE -eq $BUFFERSIZE ] ; then
-	let BUFFERSIZE=BUFFERSIZE*2
-fi
 
 
 ########################### REUSABLE TEST LOGIC ################################

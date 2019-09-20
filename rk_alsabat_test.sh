@@ -152,6 +152,8 @@ mkdir -p $logdir
 feature_pass=0
 feature_cnt=0
 feature_all=0
+
+#Frequency detection threshold
 sigma_k=30.0
 
 #0
@@ -178,7 +180,6 @@ sleep 10 #Avoid calling too fast, causing file generation errors
 feature_test "-n10000 -k $sigma_k" "configurable duration: in samples"
 feature_test "-n2.5s -k $sigma_k" "configurable duration: in seconds"
 
-feature_test "-f U8 -k $sigma_k" "configurable data format: U8"
 feature_test "-f S16_LE -k $sigma_k" "configurable data format: S16_LE"
 feature_test "-f S24_3LE -k $sigma_k" "configurable data format: S24_3LE"
 feature_test "-f S32_LE -k $sigma_k" "configurable data format: S32_LE"

@@ -38,9 +38,9 @@ to rewrite and improve compatibility on the RK platform.
 ### **1.rk_alsa_tests.sh**  
 
 　　Use rk_alsa_test_tool.sh for various audio tests  
-　　**The result can be automatically given**  
-　　**only if it is judged whether the configuration is successful.**  
-　　**However, phenomena such as Caton require manual observation.**  
+　　**The test result can be given automatically, **  
+　　**but it is only judged whether the capture/playback/loopback**  
+　　**is successful under the setting.**  
 　　　　1.1 ALSA memory access type test  
 　　　　1.2 ALSA operation mode test  
 　　　　1.3 Testing for various buffer sizes  
