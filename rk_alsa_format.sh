@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 #
 # Copyright (C) 2019 Fuzhou Rockchip Electronics Co.,Ltd
 #

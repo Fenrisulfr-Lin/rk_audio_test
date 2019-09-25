@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 ################################################################################ 
 # Copyright (C) 2011 Texas Instruments Incorporated - http://www.ti.com/
 # Copyright (C) 2019 Fuzhou Rockchip Electronics Co.,Ltd
@@ -97,11 +97,10 @@ TEST_BUFFER=(64 512 4096 32768 65536)
 i=0
 while [[ TEST_BUFFER[$i] -ne '' ]]
 do
-	do_cmd speaker-test -c 2 --period ${TEST_BUFFER[$i]} -l $TEST_LOOP
+	do_cmd speaker-test -c 2 --buffer ${TEST_BUFFER[$i]} -l $TEST_LOOP
 	let "i += 1"
 done
 
-do_cmd speaker-test -c 2 -t wave -l 1000
 
 #echo total running time
 endTime=`date +%Y%m%d-%H:%M`

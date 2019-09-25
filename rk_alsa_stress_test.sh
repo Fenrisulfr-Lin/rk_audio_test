@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 #
 # Copyright (C) 2019 Fuzhou Rockchip Electronics Co.,Ltd
 #
@@ -56,7 +56,6 @@ arecord -D $REC_DEVICE -f S16_LE -d 20 -c 2 | \
                                 aplay -D $PLAY_DEVICE -f S16_LE -d 20 -c 2 &
 #speaker-test -t wav -l $DD_TIMES &> /dev/null &
 
-
 j=0
 while [[ $j -lt $DD_TIMES ]] 
 do
@@ -106,6 +105,21 @@ done
 
 dd_num=$(ps | grep dd | wc -l)
 echo "The cleaning is completed,the number of remaining dd processes is $dd_num"
+
+
+sleep 5
+echo "speaker-test do 1000 times"
+speaker-test -c 2 -t wave -l 1000
+
+sleep 5
+echo "capture/playback/loopback each 1000s"
+bash rk_alsa_test_tool.sh -t capture -d 1000 -F ALSA_STRESS_CAPTURE.snd;
+sleep 5
+bash rk_alsa_test_tool.sh -t playback -d 1000 -F ALSA_STRESS_CAPTURE.snd
+sleep 5
+bash rk_alsa_test_tool.sh -t loopback -d 1000
+
+
 
 #echo total running time
 endTime=`date +%Y%m%d-%H:%M`

@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 #
 # Copyright (C) 2011 Texas Instruments Incorporated - http://www.ti.com/
 # Copyright (C) 2019 Fuzhou Rockchip Electronics Co.,Ltd
@@ -22,10 +22,13 @@
 #         c) Channel	   : Channel.
 #         F) File Name	   : File name to play from or capture to.
 #         o) OpMode	   : OpMode (0->Blocking, 1->Non-Blocking)
-#         a) Access Type   : Access Type(0->RW_INTERLEAVED, 1->MMAP_INTERLEAVED)
+#         a) Access Type   : Access Type(0->RW_INTERLEAVED,1->MMAP_INTERLEAVED)
+#				   (2->RW_NONINTERLEAVED,3->MMAP_NONINTERLEAVED)
 #         D) Audio Device  : Audio Device.For separate playback and capture.
 #         R) Record Device : Audio Record Device.For loopback.
 #         P) Playback Device : Audio PlaybackDevice.For loopback.
+# 	  v) verbose       : show PCM structure and setup (accumulative)
+
 
 ############################# Functions ########################################
 usage()
@@ -33,7 +36,8 @@ usage()
 	cat <<-EOF >&2
 	usage: ./${0##*/} [-t TEST_TYPE] [-D DEVICE] [-R REC_DEVICE] \
 	[-P PLAY_DEVICE] [-r SAMPLE_RATE] [-f SAMPLE_FORMAT] [-p PERIOD_SIZE] \
-	[-b BUFFER_SIZE] [-c CHANNEL] [-o OpMODE] [-a ACCESS_TYPE] [-d DURATION]
+	[-b BUFFER_SIZE] [-c CHANNEL] [-o OpMODE] [-a ACCESS_TYPE] [-d DURATION] \
+	[-v]
 	-t TEST_TYPE	    Test Type like capture,playback,loopback.
 	-D DEVICE           Device Name like hw:0,0.For  playback and capture.
 	-R REC_DEVICE       Device Name like hw:0,0.For loopback.
@@ -43,10 +47,12 @@ usage()
 	-p PERIOD_SIZE	    Period Size like 1,2,4,8,etc.
 	-b BUFFER_SIZE	    Buffer Size like 64,512,32768,65536.
 	-c CHANNEL	    Channel like 1,2.
-	-F FILENAME	    File Name to capture to or playback from	
+	-F FILENAME	    File Name to capture to or playback from
 	-o OpMODE	    OpMode (0->Blocking, 1->Non-Blocking)
 	-a ACCESS_TYPE	    Access Type (0->RW_INTERLEAVED,1->MMAP_INTERLEAVED)
-	-d DURATION         Dutaion In Secs like 5,10 etc. 
+				   (2->RW_NONINTERLEAVED,3->MMAP_NONINTERLEAVED)
+	-d DURATION         Dutaion In Secs like 5,10 etc.
+	-v Verbose          Show PCM structure and setup (accumulative)
 	EOF
 	exit 0
 }
@@ -96,7 +102,7 @@ die()
 }
 ################################ CLI Params ####################################
 # Please use getopts
-while getopts  :t:r:f:F:p:b:d:c:o:a:D:R:P:h arg
+while getopts  :t:r:f:F:p:b:d:c:o:a:D:R:P:v:h arg
 do case $arg in
         t)      TYPE="$OPTARG";;
         r)      SAMPLERATE="$OPTARG";;        
@@ -110,7 +116,8 @@ do case $arg in
         a)      ACCESSTYPE="$OPTARG";;                                
         D)      DEVICE="$OPTARG";;        
         R)      REC_DEVICE="$OPTARG";;        
-        P)      PLAY_DEVICE="$OPTARG";;                    
+        P)      PLAY_DEVICE="$OPTARG";;    
+	v)	VERBOSE="$OPTARG";;                
         h)      usage;;
         :)      die "$0: Must supply an argument to -$OPTARG.";; 
         \?)     die "Invalid Option -$OPTARG ";;
@@ -146,16 +153,17 @@ fi
 : ${SAMPLEFORMAT:='S16_LE'}
 : ${PERIODSIZE:=$(get_default_val "$CAP_STRING" "PERIOD_SIZE" 1)}
 : ${BUFFERSIZE:=$(get_default_val "$CAP_STRING" "BUFFER_SIZE" 1)}
-: ${DURATION:='10'}
+: ${DURATION:='3'}
 : ${CHANNEL:=$(get_default_val "$CAP_STRING" "CHANNELS")}
 : ${OPMODE:='0'}
 : ${ACCESSTYPE:='0'}
 : ${CAPTURELOGFLAG:='0'}
+: ${VERBOSE:='0'}
 PLAY_CARD_ID=${PLAY_DEVICE:3:1}
 REC_CARD_ID=${REC_DEVICE:3:1}
 
-let PERIODSIZE=PERIODSIZE*8 #avoid xrun 
-let BUFFERSIZE=BUFFERSIZE*8 #avoid xrun 
+#let PERIODSIZE=PERIODSIZE*8 #avoid xrun 
+#let BUFFERSIZE=BUFFERSIZE*8 #avoid xrun 
 if [ $PERIODSIZE -eq $BUFFERSIZE ] ; then
 	let BUFFERSIZE=BUFFERSIZE*2
 fi
@@ -188,12 +196,22 @@ else
 	OPMODEARG="-N" #nonblocking mode
 fi
 
-if [ $ACCESSTYPE -eq 0 ] ; then
-	ACCESSTYPEARG=""
-elif [ $ACCESSTYPE -eq 1 ] ; then
-	ACCESSTYPEARG="-M"  #mmap stream
+if [ $VERBOSE -eq 0 ] ; then
+	VERBOSEARG=""
+else
+	VERBOSEARG="-v" #verbose mode
 fi
 
+case $ACCESSTYPE in
+0)
+	ACCESSTYPEARG="";;
+1)
+	ACCESSTYPEARG="-M";;  #mmap stream
+2)
+	ACCESSTYPEARG="-I";; #separate-channels
+3)
+	ACCESSTYPEARG="-M -I";;  #mmap stream and separate-channels
+esac
 
 
 ########################### REUSABLE TEST LOGIC ################################
@@ -218,7 +236,7 @@ case "$TYPE" in
 capture)
 	do_cmd arecord -D "$DEVICE" -f "$SAMPLEFORMAT" $FILE -d "$DURATION" \
 		-r "$SAMPLERATE" -c "$CHANNEL" "$ACCESSTYPEARG" "$OPMODEARG" \
-		--buffer-size=$BUFFERSIZE --period-size $PERIODSIZE;;
+		--buffer-size=$BUFFERSIZE --period-size $PERIODSIZE "$VERBOSEARG";;
 playback)
 	if [ ! -s $FILE ] ; then
 		echo "$FILE Does not exists or has size zero."\
@@ -228,11 +246,11 @@ playback)
 	do_cmd aplay -D "$DEVICE" -f "$SAMPLEFORMAT" $FILE -d "$DURATION" \
 		-r "$SAMPLERATE" -f "$SAMPLEFORMAT" -c "$CHANNEL" \
 		"$ACCESSTYPEARG" "$OPMODEARG"  --buffer-size=$BUFFERSIZE \
-		--period-size $PERIODSIZE;;
+		--period-size $PERIODSIZE "$VERBOSEARG";;
 loopback)
 	do_cmd arecord -D "$REC_DEVICE" -f "$SAMPLEFORMAT" -d "$DURATION" \
 		-r "$SAMPLERATE" -c "$CHANNEL" "$ACCESSTYPEARG" "$OPMODEARG" \
-		--buffer-size=$BUFFERSIZE --period-size $PERIODSIZE "|" \
+		--buffer-size=$BUFFERSIZE --period-size $PERIODSIZE "$VERBOSEARG" "|" \
 		aplay -D "$PLAY_DEVICE" -f "$SAMPLEFORMAT" -d "$DURATION" \
 		-r "$SAMPLERATE" -c "$CHANNEL" "$ACCESSTYPEARG" "$OPMODEARG" \
 		--buffer-size=$BUFFERSIZE --period-size $PERIODSIZE;;
