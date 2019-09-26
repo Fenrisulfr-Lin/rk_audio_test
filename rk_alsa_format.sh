@@ -17,7 +17,7 @@
 startTime=`date +%Y%m%d-%H:%M`
 startTime_s=`date +%s`
 echo "rk_alsa_tests_result"
-echo "$startTime" > rk_alsa_format_result.log
+echo "$startTime" > result_log/rk_alsa_format_result.log
 
 #features passes vs. features all
 feature_pass=0
@@ -28,7 +28,7 @@ feature_test ()
 {
 	echo "============================================"
 	echo -e "\n$feature_cnt:|LOG| CMD=$*" \
-		| tee -a rk_alsa_format_result.log
+		| tee -a result_log/rk_alsa_format_result.log
 	echo "-------------------------------------------"
 	log=`eval $*`
 	evaluate_result $?
@@ -39,16 +39,16 @@ evaluate_result ()
 	if [ -n "$flag" ];then
 		echo "$feature_cnt:|FAIL| Return code is 2." \
 		     "Fail samplie format is ${TEST_FORMAT[$i]}" \
-		      | tee -a rk_alsa_format_result.log
+		      | tee -a result_log/rk_alsa_format_result.log
 	else
 		if [ $1 -eq 0 ]; then
 			feature_pass=$((feature_pass+1))
 			echo "$feature_cnt:|PASS| The test passed successfully"\
-			| tee -a rk_alsa_format_result.log
+			| tee -a result_log/rk_alsa_format_result.log
 		else
 			echo "$feature_cnt:|FAIL| Return code is $1." \
 			"Fail samplie format is ${TEST_FORMAT[$i]}" \
-			| tee -a rk_alsa_format_result.log
+			| tee -a result_log/rk_alsa_format_result.log
 		fi
 	fi
 	feature_cnt=$((feature_cnt+1))
@@ -89,7 +89,7 @@ do
 	else
 		echo -e "\n|NOT SUPPORT| ${TEST_FORMAT[$i]} format is"\
 		     "not supported, when the arecord write a WAVE-header"\
-		     | tee -a rk_alsa_format_result.log
+		     | tee -a result_log/rk_alsa_format_result.log
 	fi
 	let "i += 1"
 done
@@ -109,7 +109,7 @@ do
 	else
 		echo -e "\n|NOT SUPPORT| speaker-test"\
 			"does not support ${TEST_FORMAT[$i]} format"\
-				| tee -a rk_alsa_format_result.log
+				| tee -a result_log/rk_alsa_format_result.log
 	fi
 	let "i += 1"
 done
@@ -130,14 +130,14 @@ do
 	else
 		echo -e "\n|NOT SUPPORT| alsabat does"\
 			"not support ${TEST_FORMAT[$i]} format"\
-				| tee -a rk_alsa_format_result.log
+				| tee -a result_log/rk_alsa_format_result.log
 	fi					
 	let "i += 1"
 done
 
 
 echo "[$feature_pass/$feature_cnt] features passes." \
-				| tee -a rk_alsa_format_result.log
+				| tee -a result_log/rk_alsa_format_result.log
 
 #echo total running time
 endTime=`date +%Y%m%d-%H:%M`
@@ -149,4 +149,4 @@ sumTime_s=$[ $sumTime_s - $sumTime_m * 60 ]
 echo "$startTime ---> $endTime" \
      "Total running time:" \
      "$sumTime_m minutes and $sumTime_s seconds" \
-     | tee -a rk_alsa_format_result.log
+     | tee -a result_log/rk_alsa_format_result.log

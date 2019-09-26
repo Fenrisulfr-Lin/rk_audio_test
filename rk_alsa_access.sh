@@ -30,8 +30,7 @@ feature_all=0
 feature_test () 
 {
 	echo "============================================"
-	echo -e "\n$feature_cnt:|LOG| CMD=$*" \
-		| tee -a result_log/rk_alsa_access_result.log
+	echo -e "\n$feature_cnt:|LOG| CMD=$*" 
 	echo "-------------------------------------------"
 	eval $*
 	evaluate_result $?
@@ -40,11 +39,13 @@ evaluate_result ()
 {
         if [ $1 -eq 0 ]; then
                 feature_pass=$((feature_pass+1))
-                echo "$feature_cnt:|PASS| The test passed successfully"\
+                echo "$feature_cnt:|PASS| The test passed successfully"
+                echo "alsa_${TEST_TYPE[$j]}_access_${TEST_ACCESS[$i]}:" "pass" \
                 | tee -a result_log/rk_alsa_access_result.log
         else
                 echo "$feature_cnt:|FAIL| Return code is $1." \
-                "Fail access is ${TEST_ACCESS[$i]}" \
+                "Fail access is ${TEST_ACCESS[$i]}" 
+                echo "alsa_${TEST_TYPE[$j]}_access_${TEST_ACCESS[$i]}:" "fail" \
                 | tee -a result_log/rk_alsa_access_result.log
         fi
 	feature_cnt=$((feature_cnt+1))
@@ -72,29 +73,43 @@ echo "TEST ACCESS is ${TEST_ACCESS[@]}"
 #The test result can be given automatically, 
 #but it is only judged whether the capture/playback
 #is successful under the setting.
+i=0
+TEST_TYPE=(capture playback)
 while [[ -n ${TEST_ACCESS[$i]} ]]
 do
         case ${TEST_ACCESS[$i]} in
         "RW_INTERLEAVED") 
-                feature_test bash rk_alsa_test_tool.sh -t capture -a 0 \
-                     -F ALSA_ACCESSTYPE_RW_INTERLEAVED.snd;
-                feature_test bash rk_alsa_test_tool.sh -t playback -a 0 \
-                     -F ALSA_ACCESSTYPE_RW_INTERLEAVED.snd;;
+                j=0
+                while [[ -n ${TEST_TYPE[$j]} ]]
+                do
+                feature_test bash rk_alsa_test_tool.sh -t ${TEST_TYPE[$j]} -a 0\
+                     -F ALSA_ACCESSTYPE_${TEST_ACCESS[$i]}.snd;
+                let "j += 1"
+                done;;
         "MMAP_INTERLEAVED")
-                feature_test bash rk_alsa_test_tool.sh -t capture -a 1 \
-                     -F ALSA_ACCESSTYPE_MMAP_INTERLEAVED.snd;
-                feature_test bash rk_alsa_test_tool.sh -t playback -a 1 \
-                     -F ALSA_ACCESSTYPE_MMAP_INTERLEAVED.snd;;
+                j=0
+                while [[ -n ${TEST_TYPE[$j]} ]]
+                do
+                feature_test bash rk_alsa_test_tool.sh -t ${TEST_TYPE[$j]} -a 1\
+                     -F ALSA_ACCESSTYPE_${TEST_ACCESS[$i]}.snd;
+                let "j += 1"
+                done;;
         "RW_NONINTERLEAVED") 
-                feature_test bash rk_alsa_test_tool.sh -t capture -a 2 \
-                     -F ALSA_ACCESSTYPE_RW_INTERLEAVED.snd;
-                feature_test bash rk_alsa_test_tool.sh -t playback -a 2 \
-                     -F ALSA_ACCESSTYPE_RW_INTERLEAVED.snd;;
+                j=0
+                while [[ -n ${TEST_TYPE[$j]} ]]
+                do
+                feature_test bash rk_alsa_test_tool.sh -t ${TEST_TYPE[$j]} -a 2\
+                     -F ALSA_ACCESSTYPE_${TEST_ACCESS[$i]}.snd;
+                let "j += 1"
+                done;;
         "MMAP_NONINTERLEAVED")
-                feature_test bash rk_alsa_test_tool.sh -t capture -a 3 \
-                     -F ALSA_ACCESSTYPE_MMAP_INTERLEAVED.snd;
-                feature_test bash rk_alsa_test_tool.sh -t playback -a 3 \
-                     -F ALSA_ACCESSTYPE_MMAP_INTERLEAVED.snd;;
+                j=0
+                while [[ -n ${TEST_TYPE[$j]} ]]
+                do
+                feature_test bash rk_alsa_test_tool.sh -t ${TEST_TYPE[$j]} -a 3\
+                     -F ALSA_ACCESSTYPE_${TEST_ACCESS[$i]}.snd;
+                let "j += 1"
+                done;;
         esac
         let "i += 1"
 done

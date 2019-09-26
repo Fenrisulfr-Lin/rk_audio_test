@@ -17,7 +17,7 @@
 startTime=`date +%Y%m%d-%H:%M`
 startTime_s=`date +%s`
 echo "rk_alsa_tests_result"
-echo "$startTime" > rk_alsa_noise_result.log
+echo "$startTime" > result_log/rk_alsa_noise_result.log
 
 #features passes vs. features all
 feature_pass=0
@@ -28,7 +28,7 @@ feature_test ()
 {
 	echo "============================================"
 	echo -e "\n$feature_cnt:|LOG| CMD=$*" \
-				| tee -a rk_alsa_noise_result.log
+				| tee -a result_log/rk_alsa_noise_result.log
 	echo "-------------------------------------------"
 	eval $* >tmp.log 2>&1
 	eval_result=`echo "$?"`
@@ -41,12 +41,12 @@ evaluate_result ()
         if [[ $flag != '' ]]; then
                 feature_pass=$((feature_pass+1))
                 echo "$feature_cnt:|PASS| $flag" \
-                                | tee -a rk_alsa_noise_result.log
+                                | tee -a result_log/rk_alsa_noise_result.log
 		echo "$feature_cnt:|PASS| The test passed successfully" \
-				| tee -a rk_alsa_noise_result.log
+				| tee -a result_log/rk_alsa_noise_result.log
 	else
 		echo "$feature_cnt:|FAIL| Return code is $1." \
-				| tee -a rk_alsa_noise_result.log
+				| tee -a result_log/rk_alsa_noise_result.log
 	fi
 	feature_cnt=$((feature_cnt+1))
 }
@@ -77,7 +77,7 @@ feature_test alsabat -D $PLAY_DEVICE -c $CHANNELS --snr-db 30 -k $sigma_k
 
 #echo all test result 
 echo "[$feature_pass/$feature_cnt] features passes." \
-				| tee -a rk_alsa_noise_result.log
+				| tee -a result_log/rk_alsa_noise_result.log
 
 #echo total running time
 endTime=`date +%Y%m%d-%H:%M`
@@ -89,4 +89,4 @@ sumTime_s=$[ $sumTime_s - $sumTime_m * 60 ]
 echo "$startTime ---> $endTime" \
      "Total running time:" \
      "$sumTime_m minutes and $sumTime_s seconds" \
-     | tee -a rk_alsa_noise_result.log
+     | tee -a result_log/rk_alsa_noise_result.log
