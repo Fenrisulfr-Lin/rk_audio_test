@@ -84,6 +84,13 @@ NUMBER_OF_VOLUME_OPTIONS=( $(amixer -c ${CARD} contents | grep Volume | \
 echo "Number of Switches is $NUMBER_OF_VOLUME_OPTIONS"
 
 echo "===============================Start Test================================"
+#record result and time
+startTime=`date +%Y%m%d-%H:%M`
+startTime_s=`date +%s`
+echo "rk_alsa_tests_result"
+echo "$startTime"
+
+
 #Test each volume item 1+4*4=17 times, 3 seconds per test,3*17=51 seconds
 TEST_TIME=$((NUMBER_OF_VOLUME_OPTIONS*51))
 echo "Test time is $TEST_TIME seconds"
@@ -133,3 +140,13 @@ do
 	done
 	let "i += 1"
 done
+
+#echo total running time
+endTime=`date +%Y%m%d-%H:%M`
+endTime_s=`date +%s`
+sumTime_s=$[ $endTime_s - $startTime_s ]
+sumTime_m=$[ $sumTime_s / 60 ]
+sumTime_s=$[ $sumTime_s - $sumTime_m * 60 ] 
+
+echo "$startTime ---> $endTime" \
+     "Total running time:$sumTime_m minutes and $sumTime_s seconds"

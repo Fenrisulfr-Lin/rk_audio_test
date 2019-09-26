@@ -16,8 +16,8 @@
 #record result and time
 startTime=`date +%Y%m%d-%H:%M`
 startTime_s=`date +%s`
-echo "rk_alsa_tests_result" > rk_alsa_tests_result.log
-echo "$startTime" >> rk_alsa_tests_result.log
+echo "rk_alsa_tests_result"
+echo "$startTime"
 
 CAPTURE_SOUND_CARDS=( $(arecord -l | grep -i card | grep -o '[0-9]\+:' |\
                                                 cut -c 1 | awk 'FNR==1') )
@@ -44,16 +44,29 @@ echo "$ARECORD_CAP_STRING"
 echo " ==================PLAYBACK HW PARAMS=================="
 echo "$APLAY_CAP_STRING"
 
-bash rk_alsa_sample_rate.sh > running_log/rk_alsa_sample_rate_running.log 2>&1
-bash rk_alsa_format.sh      > running_log/rk_alsa_format_running.log      2>&1
-bash rk_alsa_channels.sh    > running_log/rk_alsa_channels_running.log    2>&1
-bash rk_alsa_opmode.sh      > running_log/rk_alsa_opmode_running.log      2>&1
-bash rK_alsa_access.sh      > running_log/rK_alsa_access_running.log      2>&1
-bash rk_alsa_period_size.sh > running_log/rk_alsa_period_size_running.log 2>&1
-bash rk_alsa_buffer_size.sh > running_log/rk_alsa_buffer_size_running.log 2>&1
-bash rk_alsa_noise.sh       > running_log/rk_alsa_noise_running.log       2>&1
-bash rk_alsa_latency.sh     > running_log/rk_alsa_latency_running.log     2>&1
-bash rk_alsa_pm.sh          > running_log/rk_alsa_pm_running.log          2>&1
+
+feature_test () 
+{
+	echo "============================================"
+	echo -e "\n|LOG| CMD=bash $*.sh > running_log/$*_running.log 2>&1" 
+	bash $*.sh > running_log/$*_running.log 2>&1
+     tail -n 2 running_log/$*_running.log #show the last two lines of the log
+}
+
+mkdir -p running_log
+mkdir -p result_log
+
+#in alphabetical order
+TEST_SCRIPTS=(rk_alsa_access rk_alsa_buffer_size rk_alsa_channels \
+               rk_alsa_format rk_alsa_latency rk_alsa_noise rk_alsa_opmode \
+               rk_alsa_period_size rk_alsa_pm rk_alsa_sample_rate)
+i=0
+while [[ -n ${TEST_SCRIPTS[$i]} ]]
+do      
+	feature_test ${TEST_SCRIPTS[$i]}
+	let "i += 1"
+done
+
 
 #echo total running time
 endTime=`date +%Y%m%d-%H:%M`
@@ -66,4 +79,4 @@ sumTime_m=$[ $sumTime_m - $sumTime_h * 60 ]
 
 echo "$startTime ---> $endTime" \
      "Total running time:$sumTime_h hours," \
-     "$sumTime_m minutes and $sumTime_s seconds" >> rk_alsa_tests_result.log
+     "$sumTime_m minutes and $sumTime_s seconds"

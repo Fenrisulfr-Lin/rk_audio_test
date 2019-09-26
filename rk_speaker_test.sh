@@ -57,6 +57,19 @@ startTime_s=`date +%s`
 echo "rk_alsa_tests_result" > rk_speaker_test_result.log
 echo "$startTime" >> rk_speaker_test_result.log
 
+PLAYBACK_SOUND_CARDS=( $(aplay -l | grep -i card | grep -o '[0-9]\+:' | \
+						cut -c 1 | awk 'FNR==1') )
+PLAYBACK_SOUND_DEVICE=($(aplay -l | grep -i card | grep -o '[0-9]\+:' | \
+						cut -c 1 | awk 'FNR==2') )
+: ${PLAY_DEVICE:=$(echo "hw:${PLAYBACK_SOUND_CARDS},${PLAYBACK_SOUND_DEVICE}" |\
+					 grep 'hw:[0-9]' || echo 'hw:0,0')}
+echo "PLAY_DEVICE is $PLAY_DEVICE"
+CAP_STRING=`aplay -D $PLAY_DEVICE --dump-hw-params -d 1 /dev/zero 2>&1`
+CHANNELS=`echo "$CAP_STRING" | grep -w CHANNELS | cut -d ':' -f 2`
+echo "HW_CHANNELS is $CHANNELS"
+
+
+
 echo "Starting speaker-test TEST"
 TEST_LOOP=2
 
@@ -64,9 +77,11 @@ TEST_FORMAT=(S8 S16_LE S16_BE FLOAT_LE S32_LE S32_BE)
 i=0
 while [[ $i -lt 6 ]] #String cannot be judged non-empty
 do	
-	do_cmd speaker-test -c 2 --format ${TEST_FORMAT[$i]} -l $TEST_LOOP
+	do_cmd speaker-test -D $PLAY_DEVICE -c $CHANNELS \
+			--format ${TEST_FORMAT[$i]} -l $TEST_LOOP
 	let "i += 1"
 done
+sleep 3 #Waiting for device idle
 
 TEST_TYPE=(wav pink sine)
 i=0
@@ -76,28 +91,34 @@ do
 	do_cmd speaker-test -c 2 -t ${TEST_TYPE[$i]} -l $TEST_LOOP
 	let "i += 1"
 done
+sleep 3 #Waiting for device idle
 
 TEST_RATE=(8000 11025 16000 22050 24000 32000 44100 48000 88200 96000 192000)
 i=0
 while [[ TEST_RATE[$i] -ne '' ]]
 do
-	do_cmd speaker-test -c 2 -r ${TEST_RATE[$i]} -l $TEST_LOOP
+	do_cmd speaker-test -D $PLAY_DEVICE -c $CHANNELS \
+				-r ${TEST_RATE[$i]} -l $TEST_LOOP
 	let "i += 1"
 done
+sleep 3 #Waiting for device idle
 
-TEST_PERIOD=(1 2 4 8 16 32 64 128 256 512 1024 2046 4096 8192 16384 32768)
+TEST_PERIOD=(32 64 128 256 512 1024 2046 4096 8192 16384 32768)
 i=0
 while [[ TEST_PERIOD[$i] -ne '' ]]
 do
-	do_cmd speaker-test -c 2 --period ${TEST_PERIOD[$i]} -l $TEST_LOOP
+	do_cmd speaker-test -D $PLAY_DEVICE -c $CHANNELS \
+				--period ${TEST_PERIOD[$i]} -l $TEST_LOOP
 	let "i += 1"
 done
+sleep 3 #Waiting for device idle
 
 TEST_BUFFER=(64 512 4096 32768 65536)
 i=0
 while [[ TEST_BUFFER[$i] -ne '' ]]
 do
-	do_cmd speaker-test -c 2 --buffer ${TEST_BUFFER[$i]} -l $TEST_LOOP
+	do_cmd speaker-test -D $PLAY_DEVICE -c $CHANNELS \
+				--buffer ${TEST_BUFFER[$i]} -l $TEST_LOOP
 	let "i += 1"
 done
 

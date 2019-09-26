@@ -91,6 +91,13 @@ NUMBER_OF_SWITHCES=( $(amixer -c ${CARD} controls | grep Switch | \
 echo "Number of Switches is $NUMBER_OF_SWITHCES"
 
 echo "================================Start Test==============================="
+#record result and time
+startTime=`date +%Y%m%d-%H:%M`
+startTime_s=`date +%s`
+echo "rk_alsa_tests_result"
+echo "$startTime"
+
+
 #Start testing at the back without changing the switch
 #Test each state(0/1) of each switch for 3 seconds,3*2=6
 TEST_TIME=$((NUMBER_OF_SWITHCES*6)) 
@@ -112,19 +119,19 @@ do
                 echo "====================$SWITCH_NAME Test===================="
 
                 #Get the initial value of the switch
-                SWITCH_VALUES=$(eval amixer cget name=$SWITCH_NAME | \
+                SWITCH_VALUES=$(eval amixer -c ${CARD} cget name=$SWITCH_NAME |\
                                 grep values=1 | cut -d , -f 3 | cut -d = -f 2)
                 echo -e "|LOG|The initial value of $SWITCH_NAME"\
                         "is $SWITCH_VALUES.\n"
 
                 #Test according to different initial values
-                if [ $SWITCH_VALUES == 1 ];then
+                if [[ $SWITCH_VALUES == 1 ]];then
                         do_cmd amixer -c ${CARD} cset name=$SWITCH_NAME 0
                         sleep 3
                         do_cmd amixer -c ${CARD} cset name=$SWITCH_NAME 1
                         sleep 3
                 fi
-                if [ $SWITCH_VALUES == 0 ];then
+                if [[ $SWITCH_VALUES == 0 ]];then
                         do_cmd amixer -c ${CARD} cset name=$SWITCH_NAME 1
                         sleep 3
                         do_cmd amixer -c ${CARD} cset name=$SWITCH_NAME 0
@@ -135,3 +142,12 @@ do
 	let "i += 1"	
 done
 
+#echo total running time
+endTime=`date +%Y%m%d-%H:%M`
+endTime_s=`date +%s`
+sumTime_s=$[ $endTime_s - $startTime_s ]
+sumTime_m=$[ $sumTime_s / 60 ]
+sumTime_s=$[ $sumTime_s - $sumTime_m * 60 ] 
+
+echo "$startTime ---> $endTime" \
+     "Total running time:$sumTime_m minutes and $sumTime_s seconds"

@@ -108,8 +108,6 @@ done
 echo "TEST BUFFER_SIZE is ${TEST_BUFFER_SIZE[@]}"
 
 
-
-
 #alsabat test, requires external loopback,test hw:x,x
 #Can automatically analyze test results.
 i=0
