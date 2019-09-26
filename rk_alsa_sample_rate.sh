@@ -27,25 +27,49 @@ feature_all=0
 feature_test () 
 {
 	echo "============================================"
-	echo -e "\n$feature_cnt:|LOG| CMD=$*" \
-		| tee -a result_log/rk_alsa_sample_rate_result.log
+	echo -e "\n$feature_cnt:|LOG| CMD=$*"
 	echo "-------------------------------------------"
-	eval $*
-	evaluate_result $?
+	eval $* >tmp.log 2>&1
+	eval_result=`echo "$?"`
+	cat tmp.log
+	if echo "$*" | grep alsabat ;then
+		evaluate_result_alsabat $eval_result
+	elif echo "$*" | grep speaker-test ;then
+		evaluate_result_speaker_test $eval_result
+	fi
 }
-evaluate_result () 
+evaluate_result_alsabat () 
 {
 	if [ $1 -eq 0 ]; then
 		feature_pass=$((feature_pass+1))
-		echo "$feature_cnt:|PASS| The test passed successfully" \
-		      | tee -a result_log/rk_alsa_sample_rate_result.log
+		echo "$feature_cnt:|PASS| The test passed successfully"
+		echo "alsabat_sample_rate_${TEST_RATE[$i]}:" "pass" \
+			| tee -a result_log/rk_alsa_sample_rate_result.log
 	else
-		echo "$feature_cnt:|FAIL| Return code is $1 ." \
-		     "Fail sample rate is ${TEST_RATE[$i]}" \
-		      | tee -a result_log/rk_alsa_sample_rate_result.log
+		echo "$feature_cnt:|FAIL| Return code is $1." \
+		"Fail samplie format is ${TEST_RATE[$i]}" 
+		echo "alsabat_sample_rate_${TEST_RATE[$i]}:" "fail" \
+			| tee -a result_log/rk_alsa_sample_rate_result.log
 	fi
 	feature_cnt=$((feature_cnt+1))
 }
+
+evaluate_result_speaker_test () 
+{
+	if [ $1 -eq 0 ]; then
+		feature_pass=$((feature_pass+1))
+		echo "$feature_cnt:|PASS| The test passed successfully"
+		echo "speaker_sample_rate_${TEST_RATE[$i]}:" "pass" \
+			| tee -a result_log/rk_alsa_sample_rate_result.log
+	else
+		echo "$feature_cnt:|FAIL| Return code is $1." \
+		"Fail samplie format is ${TEST_RATE[$i]}" 
+		echo "speaker_sample_rate_${TEST_RATE[$i]}:" "fail" \
+			| tee -a result_log/rk_alsa_sample_rate_result.log
+	fi
+	feature_cnt=$((feature_cnt+1))
+}
+
 
 ############################ Default Values for Params #########################
 PLAYBACK_SOUND_CARDS=( $(aplay -l | grep -i card | grep -o '[0-9]\+:' | \

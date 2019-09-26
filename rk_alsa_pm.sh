@@ -11,7 +11,7 @@
 # of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
-# @desc Testing for noise detect
+# @desc Testing for power management S3 test
 
 #record time
 startTime=`date +%Y%m%d-%H:%M`
@@ -24,23 +24,10 @@ feature_pass=0
 feature_cnt=0
 feature_all=0
 
-feature_test () 
-{
-	echo "============================================"
-	echo -e "\n$feature_cnt:|LOG| CMD=$*" \
-				| tee -a result_log/rk_alsa_pm_result.log
-	echo "-------------------------------------------"
-	eval $* >tmp.log 2>&1
-	eval_result=`echo "$?"`
-	cat tmp.log
-	evaluate_result $eval_result
-}
-
 feature_test_power () 
 {
 	echo "============================================"
-	echo -e "\n$feature_cnt:|LOG| CMD=$*" \
-				| tee -a result_log/rk_alsa_pm_result.log
+	echo -e "\n$feature_cnt:|LOG| CMD=$*"
 	echo "-------------------------------------------"
 
 	# run alsabat in the background
@@ -72,11 +59,13 @@ evaluate_result ()
 {
 	if [ $1 -eq 0 ]; then
 		feature_pass=$((feature_pass+1))
-		echo "$feature_cnt:|PASS| The test passed successfully" \
-		      | tee -a result_log/rk_alsa_pm_result.log
+		echo "$feature_cnt:|PASS| The test passed successfully"
+		echo "alsabat_pm_S3:" "pass" \
+                	| tee -a result_log/rk_alsa_pm_result.log 
 	else
-		echo "$feature_cnt:|FAIL| Return code is $1." \
-		      | tee -a result_log/rk_alsa_pm_result.log
+		echo "$feature_cnt:|FAIL| Return code is $1." 
+		echo "alsabat_pm_S3:" "fail" \
+                	| tee -a result_log/rk_alsa_pm_result.log 
 	fi
 	feature_cnt=$((feature_cnt+1))
 }
@@ -96,9 +85,6 @@ echo "HW_CHANNELS is $CHANNELS"
 
 
 sigma_k=30.0 #Frequency detection threshold
-#round trip latency test
-echo "Need quiet environment without cooling fan"
-
 #power management: S3 test
 feature_test_power alsabat -D $PLAY_DEVICE -c $CHANNELS -n5s -k $sigma_k 
 

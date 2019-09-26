@@ -27,43 +27,68 @@ feature_all=0
 feature_test () 
 {
 	echo "============================================"
-	echo -e "\n$feature_cnt:|LOG| CMD=$*" \
-		| tee -a result_log/rk_alsa_period_size_result.log
+	echo -e "\n$feature_cnt:|LOG| CMD=$*" 
 	echo "-------------------------------------------"
 	eval $* >tmp.log 2>&1
 	eval_result=`echo "$?"`
 	cat tmp.log
-	evaluate_result $eval_result
+	if echo "$*" | grep alsabat ;then
+		evaluate_result_alsabat $eval_result
+	else
+		evaluate_result $eval_result
+	fi
 }
+
+evaluate_result_alsabat () 
+{
+        underrun_num=`cat tmp.log | grep -o -i Underrun | wc -l`
+        overrun_num=`cat tmp.log | grep -o -i Overrun | wc -l`
+        echo "$feature_cnt:|LOG| Underrun num is $underrun_num"
+        echo "$feature_cnt:|LOG| Overrun num is $overrun_num" 
+
+	if [ $1 -eq 0 ]; then
+		feature_pass=$((feature_pass+1))
+		echo "$feature_cnt:|PASS| The test passed successfully"
+		echo "alsabat_period_size_${TEST_PERIOD_SIZE[$i]}:" "pass" \
+                	| tee -a result_log/rk_alsa_period_size_result.log
+	else
+		echo "$feature_cnt:|FAIL| Return code is $1 ." \
+		"Fail period size is ${TEST_PERIOD_SIZE[$i]}"
+		echo "alsabat_period_size_${TEST_PERIOD_SIZE[$i]}:" "fail" \
+                	| tee -a result_log/rk_alsa_period_size_result.log
+	fi
+	feature_cnt=$((feature_cnt+1))
+}
+
+
 evaluate_result () 
 {
         underrun_num=`cat tmp.log | grep -o -i Underrun | wc -l`
         overrun_num=`cat tmp.log | grep -o -i Overrun | wc -l`
-        echo "$feature_cnt:|LOG| Underrun num is $underrun_num" \
-			| tee -a result_log/rk_alsa_period_size_result.log
-        echo "$feature_cnt:|LOG| Overrun num is $overrun_num" \
-			| tee -a result_log/rk_alsa_period_size_result.log
+        echo "$feature_cnt:|LOG| Underrun num is $underrun_num"
+        echo "$feature_cnt:|LOG| Overrun num is $overrun_num" 
 
 	#Determine if period_size is automatically converted
 	period_size_actual=`cat tmp.log | grep period_size | cut -d ':' -f 2` 
 	if [[ $period_size_actual != *${TEST_PERIOD_SIZE[$i]}* ]] \
 					&& [[ $period_size_actual -ne '' ]];then
 		echo "$feature_cnt:|FAIL| Return code is $1 ." \
-		     "Fail period size is ${TEST_PERIOD_SIZE[$i]}" \
-		     | tee -a result_log/rk_alsa_period_size_result.log
+		     "Fail period size is ${TEST_PERIOD_SIZE[$i]}" 
 		echo "|Auto-conversion| period_size from " \
-		     "${TEST_PERIOD_SIZE[$i]} converted to $period_size_actual"\
-		     | tee -a result_log/rk_alsa_period_size_result.log
+		     "${TEST_PERIOD_SIZE[$i]} converted to $period_size_actual"
+		echo "alsa_${TEST_TYPE[$j]}_period_size_${TEST_PERIOD_SIZE[$i]}:" "fail" \
+                	| tee -a result_log/rk_alsa_period_size_result.log
 	else
-
 		if [ $1 -eq 0 ]; then
 			feature_pass=$((feature_pass+1))
-			echo "$feature_cnt:|PASS| The test passed successfully" \
-			| tee -a result_log/rk_alsa_period_size_result.log
+			echo "$feature_cnt:|PASS| The test passed successfully"
+			echo "alsa_${TEST_TYPE[$j]}_period_size_${TEST_PERIOD_SIZE[$i]}:" "pass" \
+                		| tee -a result_log/rk_alsa_period_size_result.log
 		else
 			echo "$feature_cnt:|FAIL| Return code is $1 ." \
-			"Fail period size is ${TEST_PERIOD_SIZE[$i]}" \
-			| tee -a result_log/rk_alsa_period_size_result.log
+			"Fail period size is ${TEST_PERIOD_SIZE[$i]}" 
+			echo "alsa_${TEST_TYPE[$j]}_period_size_${TEST_PERIOD_SIZE[$i]}:" "fail" \
+                		| tee -a result_log/rk_alsa_period_size_result.log
 		fi
 	fi
 	feature_cnt=$((feature_cnt+1))
@@ -125,8 +150,9 @@ do
 				-k $sigma_k -D $PLAY_DEVICE -c 2
 	else
 		echo -e "\n|NOT SUPPORT| alsabat does"\
-		"not support ${TEST_PERIOD_SIZE[$i]} period size"\
-			| tee -a result_log/rk_alsa_period_size_result.log
+		"not support ${TEST_PERIOD_SIZE[$i]} period size"
+		echo "alsabat_period_size_${TEST_PERIOD_SIZE[$i]}:" "skip" \
+                	| tee -a result_log/rk_alsa_period_size_result.log
 	fi
 	let "i += 1"
 done
@@ -135,15 +161,22 @@ done
 #The test result can be given automatically, 
 #but it is only judged whether the capture/playback
 #is successful under the setting.
+TEST_TYPE=(capture playback)
 i=0
 while [[ TEST_PERIOD_SIZE[$i] -ne '' ]]
 do
-        feature_test bash rk_alsa_test_tool.sh -t capture -p \
-        ${TEST_PERIOD_SIZE[$i]} -F ALSA_PERIOD_SIZE_${TEST_PERIOD_SIZE[$i]}.snd v
-        feature_test bash rk_alsa_test_tool.sh -t playback -p \
-        ${TEST_PERIOD_SIZE[$i]} -F ALSA_PERIOD_SIZE_${TEST_PERIOD_SIZE[$i]}.snd v
+        j=0
+	while [[ -n ${TEST_TYPE[$j]} ]]
+	do
+		feature_test bash rk_alsa_test_tool.sh -t ${TEST_TYPE[$j]} -p \
+			${TEST_PERIOD_SIZE[$i]} -F \
+			ALSA_PERIOD_SIZE_${TEST_PERIOD_SIZE[$i]}.snd -v 1
+		let "j += 1"
+	done
 	let "i += 1"
 done
+
+
 
 #echo all test result 
 echo "[$feature_pass/$feature_cnt] features passes." \

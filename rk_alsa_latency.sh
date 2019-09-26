@@ -28,23 +28,25 @@ feature_all=0
 feature_test () 
 {
 	echo "============================================"
-	echo -e "\n$feature_cnt:|LOG| CMD=$*" \
-				| tee -a result_log/rk_alsa_latency_result.log
+	echo -e "\n$feature_cnt:|LOG| CMD=$*"
 	echo "-------------------------------------------"
 	eval $* >tmp.log 2>&1
 	eval_result=`echo "$?"`
-	cat tmp.log | tee -a result_log/rk_alsa_latency_result.log
-	evaluate_result $eval_result
+	cat tmp.log 
+	evaluate_result_alsabat $eval_result
 }
-evaluate_result () 
+evaluate_result_alsabat () 
 {
 	if [ $1 -eq 0 ]; then
 		feature_pass=$((feature_pass+1))
-		echo "$feature_cnt:|PASS| The test passed successfully" \
-				| tee -a result_log/rk_alsa_latency_result.log
+		latency=`cat tmp.log | grep 'Final round trip latency' | tr -cd "[0-9]"`
+		echo "$feature_cnt:|PASS| The test passed successfully"
+		echo "alsabat_round_trip_latency:" "pass" "$latency" "ms"\
+			| tee -a result_log/rk_alsa_latency_result.log
 	else
-		echo "$feature_cnt:|FAIL| Return code is $1 ." \
-				| tee -a result_log/rk_alsa_latency_result.log
+		echo "$feature_cnt:|FAIL| Return code is $1 ." 
+		echo "alsabat_round_trip_latency:" "fail" \
+			| tee -a result_log/rk_alsa_latency_result.log
 	fi
 	feature_cnt=$((feature_cnt+1))
 }

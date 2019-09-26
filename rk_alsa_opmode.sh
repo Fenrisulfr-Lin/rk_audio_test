@@ -28,8 +28,7 @@ feature_all=0
 feature_test () 
 {
 	echo "============================================"
-	echo -e "\n$feature_cnt:|LOG| CMD=$*" \
-		| tee -a result_log/rk_alsa_opmode_result.log
+	echo -e "\n$feature_cnt:|LOG| CMD=$*"
 	echo "-------------------------------------------"
 	eval $*
 	evaluate_result $?
@@ -38,11 +37,13 @@ evaluate_result ()
 {
         if [ $1 -eq 0 ]; then
                 feature_pass=$((feature_pass+1))
-                echo "$feature_cnt:|PASS| The test passed successfully"\
-                | tee -a result_log/rk_alsa_opmode_result.log
+                echo "$feature_cnt:|PASS| The test passed successfully"
+		echo "alsa_${TEST_TYPE[$j]}_opmode_${TEST_OPMODE[$i]}:" "pass" \
+			| tee -a result_log/rk_alsa_opmode_result.log
         else
-                echo "$feature_cnt:|FAIL| Return code is $1." \
-                | tee -a result_log/rk_alsa_opmode_result.log
+                echo "$feature_cnt:|FAIL| Return code is $1."
+		echo "alsa_${TEST_TYPE[$j]}_opmode_${TEST_OPMODE[$i]}:" "fail" \
+			| tee -a result_log/rk_alsa_opmode_result.log
         fi
 	feature_cnt=$((feature_cnt+1))
 }
@@ -62,16 +63,32 @@ echo "PLAY_DEVICE is $PLAY_DEVICE"
 #but it is only judged whether the capture/playback
 #is successful under the setting.
 
-#blocking
-feature_test bash rk_alsa_test_tool.sh -t capture -o 0 \
-                        -F ALSA_OPMODE_BLK_01.snd 
-feature_test bash rk_alsa_test_tool.sh -t playback -o 0 \
-                        -F ALSA_OPMODE_BLK_01.snd
-#non-blocking
-feature_test bash rk_alsa_test_tool.sh -t capture -o 1 \
-                        -F ALSA_OPMODE_NONBLK_01.snd ;
-feature_test bash rk_alsa_test_tool.sh -t playback -o 1 \
-                        -F ALSA_OPMODE_NONBLK_01.snd
+TEST_OPMODE=(blocking non-blocking)
+TEST_TYPE=(capture playback)
+i=0
+while [[ -n ${TEST_OPMODE[$i]} ]]
+do
+	if [[ ${TEST_OPMODE[$i]} == "blocking" ]];
+	then
+		j=0
+		while [[ -n ${TEST_TYPE[$j]} ]]
+		do
+			feature_test bash rk_alsa_test_tool.sh \
+                        -t ${TEST_TYPE[$j]} -o 0 -F ALSA_OPMODE_BLK_01.snd 
+			let "j += 1"
+		done
+	else
+		j=0
+		while [[ -n ${TEST_TYPE[$j]} ]]
+		do
+			feature_test bash rk_alsa_test_tool.sh \
+                        -t ${TEST_TYPE[$j]} -o 1 -F ALSA_OPMODE_NONBLK_01.snd 
+			let "j += 1"
+		done	
+	fi
+	let "i += 1"
+done
+
 
 
 echo "[$feature_pass/$feature_cnt] features passes." \

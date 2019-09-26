@@ -73,8 +73,8 @@ echo "TEST ACCESS is ${TEST_ACCESS[@]}"
 #The test result can be given automatically, 
 #but it is only judged whether the capture/playback
 #is successful under the setting.
-i=0
 TEST_TYPE=(capture playback)
+i=0
 while [[ -n ${TEST_ACCESS[$i]} ]]
 do
         case ${TEST_ACCESS[$i]} in

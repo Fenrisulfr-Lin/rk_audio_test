@@ -27,26 +27,28 @@ feature_all=0
 feature_test () 
 {
 	echo "============================================"
-	echo -e "\n$feature_cnt:|LOG| CMD=$*" \
-				| tee -a result_log/rk_alsa_noise_result.log
+	echo -e "\n$feature_cnt:|LOG| CMD=$*"
 	echo "-------------------------------------------"
 	eval $* >tmp.log 2>&1
 	eval_result=`echo "$?"`
 	cat tmp.log
-	evaluate_result $eval_result
+	evaluate_result_alsabat $eval_result
 }
-evaluate_result () 
+evaluate_result_alsabat () 
 {
         flag=`cat tmp.log | grep -i 'Average SNR'`
         if [[ $flag != '' ]]; then
                 feature_pass=$((feature_pass+1))
-                echo "$feature_cnt:|PASS| $flag" \
-                                | tee -a result_log/rk_alsa_noise_result.log
-		echo "$feature_cnt:|PASS| The test passed successfully" \
-				| tee -a result_log/rk_alsa_noise_result.log
+		snr=`echo "$flag" | cut -d ' ' -f 4`
+
+                echo "$feature_cnt:|PASS| $flag" 
+		echo "$feature_cnt:|PASS| The test passed successfully" 
+		echo "alsabat_noise_snr_threshold_${TEST_SNR_THRESHOLD[$i]}:" "pass" "$snr" "dB"\
+			| tee -a result_log/rk_alsa_noise_result.log
 	else
-		echo "$feature_cnt:|FAIL| Return code is $1." \
-				| tee -a result_log/rk_alsa_noise_result.log
+		echo "$feature_cnt:|FAIL| Return code is $1."
+		echo "alsabat_noise_snr_threshold_${TEST_SNR_THRESHOLD[$i]}:" "fail"\
+			| tee -a result_log/rk_alsa_noise_result.log
 	fi
 	feature_cnt=$((feature_cnt+1))
 }
@@ -66,14 +68,20 @@ echo "HW_CHANNELS is $CHANNELS"
 
 
 sigma_k=30.0 #Frequency detection threshold
-#round trip latency test
-echo "Need quiet environment without cooling fan"
 
-feature_test alsabat -D $PLAY_DEVICE -c $CHANNELS --snr-db 10 -k $sigma_k 
-feature_test alsabat -D $PLAY_DEVICE -c $CHANNELS --snr-db 20 -k $sigma_k
-feature_test alsabat -D $PLAY_DEVICE -c $CHANNELS --snr-db 30 -k $sigma_k
+#The threshold set by --snr-db, below which the value is judged as noise
+TEST_SNR_THRESHOLD=(5 10 20 30) 
+i=0
+while [[ -n ${TEST_SNR_THRESHOLD[$i]} ]]
+do
+	feature_test alsabat -D $PLAY_DEVICE -c $CHANNELS \
+			--snr-db ${TEST_SNR_THRESHOLD[$i]} -k $sigma_k 
+	let "i += 1"
+done
+
 #--snr-pc just different units, no need for repeated testing
 #feature_test alsabat -D $PLAY_DEVICE -c $CHANNELS --snr-pc 15 -k $sigma_k
+
 
 #echo all test result 
 echo "[$feature_pass/$feature_cnt] features passes." \

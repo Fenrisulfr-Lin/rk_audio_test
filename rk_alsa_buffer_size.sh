@@ -27,42 +27,66 @@ feature_all=0
 feature_test () 
 {
 	echo "============================================"
-	echo -e "\n$feature_cnt:|LOG| CMD=$*" \
-		| tee -a result_log/rk_alsa_buffer_size_result.log
+	echo -e "\n$feature_cnt:|LOG| CMD=$*" 
 	echo "-------------------------------------------"
 	eval $* >tmp.log 2>&1
 	eval_result=`echo "$?"`
 	cat tmp.log
-	evaluate_result $eval_result
+	if echo "$*" | grep alsabat ;then
+		evaluate_result_alsabat $eval_result
+	else
+		evaluate_result $eval_result
+	fi
 }
+evaluate_result_alsabat () 
+{
+        underrun_num=`cat tmp.log | grep -o -i Underrun | wc -l`
+        overrun_num=`cat tmp.log | grep -o -i Overrun | wc -l`
+        echo "$feature_cnt:|LOG| Underrun num is $underrun_num" 
+        echo "$feature_cnt:|LOG| Overrun num is $overrun_num" 
+
+	if [ $1 -eq 0 ]; then
+		feature_pass=$((feature_pass+1))
+		echo "$feature_cnt:|PASS| The test passed successfully" 
+		echo "alsabat_buffer_size_${TEST_BUFFER_SIZE[$i]}:" "pass" \
+                	| tee -a result_log/rk_alsa_buffer_size_result.log
+	else
+		echo "$feature_cnt:|FAIL| Return code is $1 ." \
+		"Fail buffer size is ${TEST_BUFFER_SIZE[$i]}"
+		echo "alsabat_buffer_size_${TEST_BUFFER_SIZE[$i]}:" "fail" \
+                	| tee -a result_log/rk_alsa_buffer_size_result.log
+	fi
+	feature_cnt=$((feature_cnt+1))
+}
+
 evaluate_result () 
 {
         underrun_num=`cat tmp.log | grep -o -i Underrun | wc -l`
         overrun_num=`cat tmp.log | grep -o -i Overrun | wc -l`
-        echo "$feature_cnt:|LOG| Underrun num is $underrun_num" \
-			| tee -a result_log/rk_alsa_buffer_size_result.log
-        echo "$feature_cnt:|LOG| Overrun num is $overrun_num" \
-			| tee -a result_log/rk_alsa_buffer_size_result.log
+        echo "$feature_cnt:|LOG| Underrun num is $underrun_num" 
+        echo "$feature_cnt:|LOG| Overrun num is $overrun_num" 
 
 	#Determine if buffer_size is automatically converted
 	buffer_size_actual=`cat tmp.log | grep buffer_size | cut -d ':' -f 2` 
 	if [[ $buffer_size_actual != *${TEST_BUFFER_SIZE[$i]}* ]] \
 					&& [[ $buffer_size_actual -ne '' ]];then
 		echo "$feature_cnt:|FAIL| Return code is $1 ." \
-		     "Fail buffer size is ${TEST_BUFFER_SIZE[$i]}" \
-		     | tee -a result_log/rk_alsa_buffer_size_result.log
+		     "Fail buffer size is ${TEST_BUFFER_SIZE[$i]}" 
 		echo "|Auto-conversion| buffer_size from " \
-		     "${TEST_BUFFER_SIZE[$i]} converted to $buffer_size_actual"\
-		     | tee -a result_log/rk_alsa_buffer_size_result.log
+		     "${TEST_BUFFER_SIZE[$i]} converted to $buffer_size_actual"
+		echo "alsa_${TEST_TYPE[$j]}_buffer_size_${TEST_BUFFER_SIZE[$i]}:" "fail" \
+                	| tee -a result_log/rk_alsa_buffer_size_result.log
 	else
 		if [ $1 -eq 0 ]; then
 			feature_pass=$((feature_pass+1))
-			echo "$feature_cnt:|PASS| The test passed successfully" \
-			| tee -a result_log/rk_alsa_buffer_size_result.log
+			echo "$feature_cnt:|PASS| The test passed successfully"
+			echo "alsa_${TEST_TYPE[$j]}_buffer_size_${TEST_BUFFER_SIZE[$i]}:" "pass" \
+                		| tee -a result_log/rk_alsa_buffer_size_result.log
 		else
 			echo "$feature_cnt:|FAIL| Return code is $1 ." \
-			"Fail buffer size is ${TEST_BUFFER_SIZE[$i]}" \
-			| tee -a result_log/rk_alsa_buffer_size_result.log
+			"Fail buffer size is ${TEST_BUFFER_SIZE[$i]}"
+			echo "alsa_${TEST_TYPE[$j]}_buffer_size_${TEST_BUFFER_SIZE[$i]}:" "fail" \
+                		| tee -a result_log/rk_alsa_buffer_size_result.log
 		fi
 	fi
 	feature_cnt=$((feature_cnt+1))
@@ -124,8 +148,9 @@ do
 				-k $sigma_k -D $PLAY_DEVICE -c 2
 	else
 		echo -e "\n|NOT SUPPORT| alsabat does"\
-		"not support ${TEST_BUFFER_SIZE[$i]} buffer size"\
-			| tee -a result_log/rk_alsa_buffer_size_result.log
+		"not support ${TEST_BUFFER_SIZE[$i]} buffer size"
+		echo "alsabat_buffer_size_${TEST_BUFFER_SIZE[$i]}:" "skip" \
+                	| tee -a result_log/rk_alsa_buffer_size_result.log
 	fi
 	let "i += 1"
 done
@@ -134,13 +159,18 @@ done
 #The test result can be given automatically, 
 #but it is only judged whether the capture/playback
 #is successful under the setting.
+TEST_TYPE=(capture playback)
 i=0
 while [[ TEST_BUFFER_SIZE[$i] -ne '' ]]
 do
-        feature_test bash rk_alsa_test_tool.sh -t capture -b \
-        ${TEST_BUFFER_SIZE[$i]} -F ALSA_BUFFER_SIZE_${TEST_BUFFER_SIZE[$i]}.snd -v 1
-        feature_test bash rk_alsa_test_tool.sh -t playback -b \
-        ${TEST_BUFFER_SIZE[$i]} -F ALSA_BUFFER_SIZE_${TEST_BUFFER_SIZE[$i]}.snd -v 1
+	j=0
+	while [[ -n ${TEST_TYPE[$j]} ]]
+	do
+	feature_test bash rk_alsa_test_tool.sh -t ${TEST_TYPE[$j]} -b \
+        	${TEST_BUFFER_SIZE[$i]} -F \
+		ALSA_BUFFER_SIZE_${TEST_BUFFER_SIZE[$i]}.snd -v 1
+	let "j += 1"
+	done
 	let "i += 1"
 done
 
