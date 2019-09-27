@@ -113,9 +113,9 @@ speaker-test -c 2 -t wave -l 1000
 
 sleep 5
 echo "capture/playback/loopback each 1000s"
-bash rk_alsa_test_tool.sh -t capture -d 1000 -F ALSA_STRESS_CAPTURE.snd;
+bash rk_alsa_test_tool.sh -t capture -d 1000 -F tmp_snd/ALSA_STRESS_CAPTURE.snd;
 sleep 5
-bash rk_alsa_test_tool.sh -t playback -d 1000 -F ALSA_STRESS_CAPTURE.snd
+bash rk_alsa_test_tool.sh -t playback -d 1000 -F tmp_snd/ALSA_STRESS_CAPTURE.snd
 sleep 5
 bash rk_alsa_test_tool.sh -t loopback -d 1000
 

@@ -24,25 +24,21 @@
 #           7) configurable channel number: 2
 #           8) configurable sample rate: 44100
 #           9) configurable sample rate: 48000
-#           10) configurable duration: in samples
-#           11) configurable duration: in seconds
-#           12) configurable data format: U8
-#           13) configurable data format: S16_LE
-#           14) configurable data format: S24_3LE
-#           15) configurable data format: S32_LE
-#           16) configurable data format: cd
-#           17) configurable data format: dat
-#           18) standalone mode: play and capture
-#           19) local mode: analyze local file
-#           20) round trip latency test
-#           21) noise detect threshold in SNR(dB)
-#           22) noise detect threshold in noise percentage(%)
-#           23) power management: S3 test
+#           10) configurable duration: in 10000 frames
+#           11) configurable duration: in 2.5 seconds
+#           12) configurable data format: S16_LE
+#           13) configurable data format: S24_3LE
+#           14) configurable data format: S32_LE
+#           15) configurable data format: cd
+#           16) configurable data format: dat
+#           17) standalone mode: play and capture
+#           18) local mode: analyze local file
+
 
 #record result and time
 startTime=`date +%Y%m%d-%H:%M`
 startTime_s=`date +%s`
-echo "start time:$startTime" 
+echo "start time:$startTime" > result_log/rk_alsabat_test_result.log
 
 # default devices ,default value is hw:0,0
 CAPTURE_SOUND_CARDS=( $(arecord -l | grep -i card | grep -o '[0-9]\+:' | \
@@ -72,7 +68,7 @@ commands="$bin -P $play_device -C $rec_device"
 
 file_sin_mono="default_mono.wav"
 file_sin_dual="default_dual.wav"
-logdir="log_rk_alsabat_test"
+logdir="rk_alsabat_test_log"
 
 # frequency range of signal
 maxfreq=16547
@@ -83,9 +79,11 @@ evaluate_result ()
 	feature_cnt=$((feature_cnt+1))
 	if [ $1 -eq 0 ]; then
 		feature_pass=$((feature_pass+1))
-		echo "pass"
+		echo "$2:" "pass" \
+			| tee -a result_log/rk_alsabat_test_result.log
 	else
-		echo "fail"
+		echo "$2:" "fail" \
+			| tee -a result_log/rk_alsabat_test_result.log
 	fi
 }
 
@@ -96,7 +94,7 @@ feature_test ()
 	echo "-------------------------------------------"
 	echo "$commands $1 --log=$logdir/$feature_cnt.log"
 	$commands $1 --log=$logdir/$feature_cnt.log
-	evaluate_result $?
+	evaluate_result $? $2
 	echo "$commands $1" >> $logdir/$((feature_cnt-1)).log
 }
 
@@ -135,54 +133,56 @@ sigma_k=30.0
 
 #0
 feature_test "-c1 --saveplay $file_sin_mono -k $sigma_k" \
-		"generate mono wav file with default params"
+		"generate_mono_wav_file_with_default_params"
 feature_test "-c2 --saveplay $file_sin_dual -k $sigma_k" \
-		"generate dual wav file with default params"
+		"generate_dual_wav_file_with_default_params"
 sleep 5
-feature_test "-P $play_device -c $CHANNELS" "single line mode, playback"
+feature_test "-P $play_device -c $CHANNELS" "single_line_mode_playback"
 feature_test "-C $rec_device --standalone -c $CHANNELS" \
-		"single line mode, capture"
+		"single_line_mode_capture"
 feature_test "--file $file_sin_mono -k $sigma_k -c 1" \
-		"play mono wav file and detect"
+		"play_mono_wav_file_and_detect"
 #5
 feature_test "--file $file_sin_dual -k $sigma_k -c 2" \
-		"play dual wav file and detect"
-feature_test "-c1 -k $sigma_k" "configurable channel number: 1"
+		"play_dual_wav_file_and_detect"
+feature_test "-c1 -k $sigma_k" "configurable_channel_number_1"
 
 feature_test "-c2 -F $minfreq:$maxfreq -k $sigma_k" \
-	     "configurable channel number: 2"
-echo "Require separate testing of left and right channels"
+	     "configurable_channel_number_2"
+echo "configurable_channel_number_2: Require separate testing of left and right channels" \
+			| tee -a result_log/rk_alsabat_test_result.log
 
 feature_test "-r44100 -k $sigma_k -c $CHANNELS" \
-		"configurable sample rate: 44100"
+		"configurable_sample_rate_44100"
 feature_test "-r48000 -k $sigma_k -c $CHANNELS" \
-		"configurable sample rate: 48000"
+		"configurable_sample_rate_48000"
 
 sleep 10 #Avoid calling too fast, causing file generation errors
 #10
 feature_test "-n10000 -k $sigma_k -c $CHANNELS" \
-		"configurable duration: in samples"
+		"configurable_duration_in_10000_frames"
 feature_test "-n2.5s -k $sigma_k -c $CHANNELS" \
-		"configurable duration: in seconds"
+		"configurable_duration_in_2.5_seconds"
 
 feature_test "-f S16_LE -k $sigma_k -c $CHANNELS" \
-		"configurable data format: S16_LE"
+		"configurable_data_format_S16_LE"
 feature_test "-f S24_3LE -k $sigma_k -c $CHANNELS" \
-		"configurable data format: S24_3LE"
+		"configurable_data_format_S24_3LE"
 feature_test "-f S32_LE -k $sigma_k -c $CHANNELS" \
-		"configurable data format: S32_LE"
+		"configurable_data_format_S32_LE"
 #15
-feature_test "-f cd -k $sigma_k -c $CHANNELS" "configurable data format: cd"
-feature_test "-f dat -k $sigma_k -c $CHANNELS" "configurable data format: dat"
+feature_test "-f cd -k $sigma_k -c $CHANNELS" "configurable_data_format_cd"
+feature_test "-f dat -k $sigma_k -c $CHANNELS" "configurable_data_format_dat"
 
-feature_test "--standalone -c $CHANNELS" "standalone mode: play and capture"
+feature_test "--standalone -c $CHANNELS" "standalone_mode_play_and_capture"
 #18 The latest file generated by alsabat.For the 20th test
 latestfile=`ls -t1 /tmp/bat.wav.* | head -n 1` 
 feature_test "--local -F 997 --file $latestfile -k $sigma_k" \
-	     "local mode: analyze local file"
+	     "local_mode_analyze_local_file"
 
 
-echo "[$feature_pass/$feature_cnt] features passes."
+echo "[$feature_pass/$feature_cnt] features passes." \
+			| tee -a result_log/rk_alsabat_test_result.log
 
 #echo total running time
 endTime=`date +%Y%m%d-%H:%M`
@@ -192,4 +192,5 @@ sumTime_m=$[ $sumTime_s / 60 ]
 sumTime_s=$[ $sumTime_s - $sumTime_m * 60 ] 
 
 echo "$startTime ---> $endTime" \
-     "Total running time: $sumTime_m minutes and $sumTime_s seconds"
+     "Total running time: $sumTime_m minutes and $sumTime_s seconds" \
+			| tee -a result_log/rk_alsabat_test_result.log

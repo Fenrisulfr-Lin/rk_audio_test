@@ -27,22 +27,44 @@ feature_all=0
 feature_test () 
 {
 	echo "============================================"
-	echo -e "\n$feature_cnt:|LOG| CMD=$*" \
-		| tee -a result_log/rk_alsa_channels_result.log
+	echo -e "\n$feature_cnt:|LOG| CMD=$*" 
 	echo "-------------------------------------------"
-	eval $* 
-	evaluate_result $?
+	eval $* >tmp.log 2>&1
+	eval_result=`echo "$?"`
+	cat tmp.log
+	if echo "$*" | grep alsabat ;then
+		evaluate_result_alsabat $eval_result
+	else
+		evaluate_result $eval_result
+	fi
 }
-evaluate_result () 
+evaluate_result_alsabat () 
 {
 	if [ $1 -eq 0 ]; then
 		feature_pass=$((feature_pass+1))
-		echo "$feature_cnt:|PASS| The test passed successfully" \
-		      | tee -a result_log/rk_alsa_channels_result.log
+		echo "$feature_cnt:|PASS| The test passed successfully" 
+		echo "alsabat_channels_$i:" "pass" \
+                	| tee -a result_log/rk_alsa_channels_result.log
 	else
 		echo "$feature_cnt:|FAIL| Return code is $1 ." \
-		     "Fail channels is $i" \
-		      | tee -a result_log/rk_alsa_channels_result.log
+		     "Fail channels is $i" 
+		echo "alsabat_channels_$i:" "fail" \
+                	| tee -a result_log/rk_alsa_channels_result.log
+	fi
+	feature_cnt=$((feature_cnt+1))
+}
+evaluate_result () 
+{
+	if [[ $1 -eq 0 ]]; then
+		feature_pass=$((feature_pass+1))
+		echo "$feature_cnt:|PASS| The test passed successfully" 
+		echo "alsa_${TEST_TYPE[$j]}_channels_$i:" "pass" \
+                	| tee -a result_log/rk_alsa_channels_result.log
+	else
+		echo "$feature_cnt:|FAIL| Return code is $1 ." \
+		     "Fail channels is $i" 
+		echo "alsa_${TEST_TYPE[$j]}_channels_$i:" "fail" \
+			| tee -a result_log/rk_alsa_channels_result.log
 	fi
 	feature_cnt=$((feature_cnt+1))
 }
@@ -61,6 +83,7 @@ CHANNELS=`echo "$CAP_STRING" | grep -w CHANNELS | cut -d ':' -f 2`
 echo "HW_CHANNELS is $CHANNELS"
 
 
+TEST_TYPE=(capture playback)
 sigma_k=30.0 #Frequency detection threshold
 i=1
 while [[ $i -le $CHANNELS ]]
@@ -73,10 +96,14 @@ do
 	#The test result can be given automatically, 
 	#but it is only judged whether the capture/playback
 	#is successful under the setting.
-	feature_test bash rk_alsa_test_tool.sh -t capture -c $i \
-		-F ALSA_CHANNELS_$i.snd
-	feature_test bash rk_alsa_test_tool.sh -t playback -c $i \
-		-F ALSA_CHANNELS_$i.snd
+	j=0
+	while [[ -n ${TEST_TYPE[$j]} ]]
+	do
+	feature_test bash rk_alsa_test_tool.sh -t ${TEST_TYPE[$j]} -c $i \
+		-F tmp_snd/ALSA_CHANNELS_$i.snd
+	let "j += 1"
+	done
+
 	let "i += 1"
 done
 

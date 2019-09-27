@@ -130,7 +130,7 @@ do
 		do
 			feature_test bash rk_alsa_test_tool.sh \
 				-t ${TEST_TYPE[$j]} -f ${TEST_FORMAT[$i]} -F \
-				ALSA_FORMAT_${TEST_FORMAT[$i]}.snd -d 5
+				tmp_snd/ALSA_FORMAT_${TEST_FORMAT[$i]}.snd -d 5
 			let "j += 1"
 		done
 	else

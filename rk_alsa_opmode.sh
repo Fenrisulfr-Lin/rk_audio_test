@@ -74,7 +74,7 @@ do
 		while [[ -n ${TEST_TYPE[$j]} ]]
 		do
 			feature_test bash rk_alsa_test_tool.sh \
-                        -t ${TEST_TYPE[$j]} -o 0 -F ALSA_OPMODE_BLK_01.snd 
+                        -t ${TEST_TYPE[$j]} -o 0 -F tmp_snd/ALSA_OPMODE_BLK_01.snd 
 			let "j += 1"
 		done
 	else
@@ -82,7 +82,7 @@ do
 		while [[ -n ${TEST_TYPE[$j]} ]]
 		do
 			feature_test bash rk_alsa_test_tool.sh \
-                        -t ${TEST_TYPE[$j]} -o 1 -F ALSA_OPMODE_NONBLK_01.snd 
+                        -t ${TEST_TYPE[$j]} -o 1 -F tmp_snd/ALSA_OPMODE_NONBLK_01.snd 
 			let "j += 1"
 		done	
 	fi

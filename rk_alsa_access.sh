@@ -83,7 +83,7 @@ do
                 while [[ -n ${TEST_TYPE[$j]} ]]
                 do
                 feature_test bash rk_alsa_test_tool.sh -t ${TEST_TYPE[$j]} -a 0\
-                     -F ALSA_ACCESSTYPE_${TEST_ACCESS[$i]}.snd;
+                     -F tmp_snd/ALSA_ACCESSTYPE_${TEST_ACCESS[$i]}.snd;
                 let "j += 1"
                 done;;
         "MMAP_INTERLEAVED")
@@ -91,7 +91,7 @@ do
                 while [[ -n ${TEST_TYPE[$j]} ]]
                 do
                 feature_test bash rk_alsa_test_tool.sh -t ${TEST_TYPE[$j]} -a 1\
-                     -F ALSA_ACCESSTYPE_${TEST_ACCESS[$i]}.snd;
+                     -F tmp_snd/ALSA_ACCESSTYPE_${TEST_ACCESS[$i]}.snd;
                 let "j += 1"
                 done;;
         "RW_NONINTERLEAVED") 
@@ -99,7 +99,7 @@ do
                 while [[ -n ${TEST_TYPE[$j]} ]]
                 do
                 feature_test bash rk_alsa_test_tool.sh -t ${TEST_TYPE[$j]} -a 2\
-                     -F ALSA_ACCESSTYPE_${TEST_ACCESS[$i]}.snd;
+                     -F tmp_snd/ALSA_ACCESSTYPE_${TEST_ACCESS[$i]}.snd;
                 let "j += 1"
                 done;;
         "MMAP_NONINTERLEAVED")
@@ -107,7 +107,7 @@ do
                 while [[ -n ${TEST_TYPE[$j]} ]]
                 do
                 feature_test bash rk_alsa_test_tool.sh -t ${TEST_TYPE[$j]} -a 3\
-                     -F ALSA_ACCESSTYPE_${TEST_ACCESS[$i]}.snd;
+                     -F tmp_snd/ALSA_ACCESSTYPE_${TEST_ACCESS[$i]}.snd;
                 let "j += 1"
                 done;;
         esac

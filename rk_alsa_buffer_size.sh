@@ -168,7 +168,7 @@ do
 	do
 	feature_test bash rk_alsa_test_tool.sh -t ${TEST_TYPE[$j]} -b \
         	${TEST_BUFFER_SIZE[$i]} -F \
-		ALSA_BUFFER_SIZE_${TEST_BUFFER_SIZE[$i]}.snd -v 1
+		tmp_snd/ALSA_BUFFER_SIZE_${TEST_BUFFER_SIZE[$i]}.snd -v 1
 	let "j += 1"
 	done
 	let "i += 1"
