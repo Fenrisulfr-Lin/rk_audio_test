@@ -19,6 +19,7 @@ startTime_s=`date +%s`
 echo "rk_alsa_tests_result"
 mkdir -p result_log
 mkdir -p tmp_snd
+mkdir -p running_log
 echo "$startTime" > result_log/rk_alsa_period_size_result.log
 
 #features passes vs. features all

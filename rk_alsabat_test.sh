@@ -66,8 +66,9 @@ rec_device=$REC_DEVICE
 bin="alsabat"
 commands="$bin -P $play_device -C $rec_device"
 
-file_sin_mono="default_mono.wav"
-file_sin_dual="default_dual.wav"
+mkdir -p tmp_snd
+file_sin_mono="tmp_snd/default_mono.wav"
+file_sin_dual="tmp_snd/default_dual.wav"
 logdir="rk_alsabat_test_log"
 
 # frequency range of signal

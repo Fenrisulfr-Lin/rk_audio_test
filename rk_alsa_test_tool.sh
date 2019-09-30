@@ -86,12 +86,11 @@ do_cmd()
 	eval $CMD
 	RESULT=$?
 	if [ $RESULT -ne 0 ];then
-		echo "|FAIL|:$CMD failed. Return code is $RESULT" \
-		     >> rk_alsa_tests_result.log
+		echo "|FAIL|:$CMD failed. Return code is $RESULT" 
 		exit $RESULT
 	fi
 	if [ $RESULT -eq 0 ];then
-		echo "|PASS|:$CMD passed." >> rk_alsa_tests_result.log
+		echo "|PASS|:$CMD passed."
 	fi
 }
 
