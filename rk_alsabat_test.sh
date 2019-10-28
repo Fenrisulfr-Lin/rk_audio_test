@@ -34,6 +34,8 @@
 #           17) standalone mode: play and capture
 #           18) local mode: analyze local file
 
+mkdir -p tmp_snd
+mkdir -p result_log
 
 #record result and time
 startTime=`date +%Y%m%d-%H:%M`
@@ -51,7 +53,7 @@ CAPTURE_SOUND_DEVICE=($(arecord -l | grep -i card | grep -o '[0-9]\+:' | \
 PLAYBACK_SOUND_CARDS=( $(aplay -l | grep -i card | grep -o '[0-9]\+:' | \
 						cut -c 1 | awk 'FNR==1') )
 PLAYBACK_SOUND_DEVICE=($(aplay -l | grep -i card | grep -o '[0-9]\+:' | \
-						cut -c 1 | awk 'FNR==2') )
+			   			cut -c 1 | awk 'FNR==2') )
 : ${PLAY_DEVICE:=$(echo "hw:${PLAYBACK_SOUND_CARDS},${PLAYBACK_SOUND_DEVICE}" |\
 					 grep 'hw:[0-9]' || echo 'hw:0,0')}
 
@@ -66,7 +68,7 @@ rec_device=$REC_DEVICE
 bin="alsabat"
 commands="$bin -P $play_device -C $rec_device"
 
-mkdir -p tmp_snd
+
 file_sin_mono="tmp_snd/default_mono.wav"
 file_sin_dual="tmp_snd/default_dual.wav"
 logdir="rk_alsabat_test_log"
